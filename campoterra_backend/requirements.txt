@@ -1,0 +1,7 @@
+alembic
+fastapi
+pydantic
+PyMySQL
+python-dotenv
+SQLAlchemy
+uvicorn

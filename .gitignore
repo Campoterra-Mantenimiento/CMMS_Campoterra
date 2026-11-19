@@ -1,0 +1,24 @@
+/campoterra_backend/.env
+/campoterra_backend/backups/
+
+# Archivos generados por Python
+__pycache__/
+*.py[cod]
+.venv/
+/supabase/.temp/
+/_site/
+
+# Documentos de trabajo y archivos temporales (no publicar)
+/output/
+/tmp/
+
+# Credenciales locales y material de firma
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.p8
+*.pem
+*.key

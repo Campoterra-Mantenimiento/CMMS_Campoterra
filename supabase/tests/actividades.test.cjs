@@ -1,0 +1,55 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path');
+const {PGlite}=require(process.env.PGLITE_MODULE || '@electric-sql/pglite');
+test('actividades: permisos, reintentos, concurrencia, seguimiento y planificación futura',async()=>{
+ const db=new PGlite();
+ const boss='00000000-0000-0000-0000-000000000001',device='00000000-0000-0000-0000-000000000002';
+ const id='10000000-0000-0000-0000-000000000001';
+ try {
+  await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);
+   create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+   grant usage on schema auth to authenticated;insert into auth.users values('${boss}'),('${device}');`);
+  for(const name of ['202610060001_pilot_base.sql','202611040010_actividades.sql','202611040011_tipos_actividades.sql','202611040012_eliminar_actividades.sql','202611120013_turnos_actividades.sql'])await db.exec(fs.readFileSync(path.join(__dirname,'../migrations',name),'utf8'));
+  await db.exec(`insert into campoterra_private.accesos(auth_user_id,tipo,nombre) values('${boss}','encargado','Jefe'),('${device}','dispositivo','Tablet');
+   insert into public.tecnicos(nombre) values('Técnico');`);
+  async function run(user,sql,args=[]){await db.exec('begin;set local role authenticated');try{await db.query("select set_config('request.jwt.claim.sub',$1,true)",[user]);const r=await db.query(sql,args);await db.exec('commit');return r.rows;}catch(e){await db.exec('rollback');throw e;}}
+  const save=(user,over={})=>{const r={id,tech:1,date:'2020-01-01',text:'Lubricar bomba',type:'Preventiva',state:'Pendiente',notes:'',revision:0,shift:null,...over};return run(user,'select public.guardar_actividad($1,$2,$3,$4,$5,$6,$7,$8,$9) as r',Object.values(r));};
+  await assert.rejects(save(boss,{type:'Planeada'}),/Revisa/);
+  await assert.rejects(save(device),/exclusivo/);
+  await assert.rejects(save(boss,{text:' '}),/Revisa/);
+  await assert.rejects(save(boss,{state:'No realizada'}),/por qué/);
+  await assert.rejects(save(boss,{date:'2999-01-01',state:'Realizada'}),/futuras/);
+  await assert.rejects(save(boss,{date:'2999-01-01',type:'Emergente'}),/futuras/);
+  await assert.rejects(save(boss,{shift:'Otro'}),/turno válido/);
+  const first=(await save(boss))[0].r;
+  assert.equal(first.turno,null);
+  assert.equal(first.revision,1);assert.equal(first.creado_por,boss);
+  assert.deepEqual((await save(boss))[0].r,first);
+  await assert.rejects(save(boss,{text:'Otra tarea'}),/cambió/);
+  const updated=(await save(boss,{state:'No realizada',notes:'Faltó repuesto',revision:1,shift:'Noche'}))[0].r;
+  assert.equal(updated.turno,'Noche');assert.equal(updated.revision,2);assert.equal(updated.estado,'No realizada');
+  await assert.rejects(save(boss,{revision:1,state:'Realizada'}),/cambió/);
+  await assert.rejects(save(boss,{revision:2,date:'2020-01-02'}),/cambió/);
+  assert.equal((await run(device,'select * from public.actividades_mantenimiento')).length,0);
+  assert.equal((await run(boss,'select * from public.actividades_mantenimiento')).length,1);
+  await assert.rejects(run(boss,"update public.actividades_mantenimiento set estado='Realizada'"),/permission denied/);
+  await assert.rejects(run(boss,'delete from public.actividades_mantenimiento'),/permission denied/);
+  assert.equal((await save(boss,{id:'10000000-0000-0000-0000-000000000002',date:'2999-01-01'}))[0].r.estado,'Pendiente');
+  assert.equal((await save(boss,{id:'10000000-0000-0000-0000-000000000004',type:'Correctiva'}))[0].r.tipo,'Correctiva');
+  assert.equal((await save(boss,{id:'10000000-0000-0000-0000-000000000005',type:'Emergente'}))[0].r.tipo,'Emergente');
+  await db.exec("update public.tecnicos set estado='Inactivo' where id_tecnico=1");
+  await assert.rejects(save(boss,{id:'10000000-0000-0000-0000-000000000003'}),/activo/);
+  assert.equal((await save(boss,{revision:2,state:'Realizada'}))[0].r.revision,3);
+  const remove=(user,revision)=>run(user,'select public.eliminar_actividad($1,$2) as r',[id,revision]);
+  await assert.rejects(remove(device,3),/exclusivo/);
+  await assert.rejects(remove(boss,0),/inválida/);
+  await assert.rejects(remove(boss,2),/cambió/);
+  assert.equal((await remove(boss,3))[0].r.id_actividad,id);
+  await assert.rejects(remove(boss,3),/eliminada/);
+  assert.equal((await run(boss,'select * from public.actividades_mantenimiento')).length,3);
+  await db.exec(`update campoterra_private.accesos set activo=false where auth_user_id='${boss}'`);
+  await assert.rejects(save(boss,{revision:3}),/exclusivo/);
+  await assert.rejects(remove(boss,3),/exclusivo/);
+ }finally{await db.close();}
+});

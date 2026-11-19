@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes | Campoterra CMMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+        .sidebar { height: 100vh; width: 260px; background-color: #0b1528; position: fixed; top: 0; left: 0; padding-top: 20px; color: white; z-index: 1000; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; margin-bottom: 40px; letter-spacing: 1px; }
+        .sidebar-brand i { font-size: 1.8rem; margin-right: 10px; }
+        .sidebar a { padding: 15px 25px; text-decoration: none; font-size: 15px; color: #a0aabf; display: block; transition: 0.3s; }
+        .sidebar a:hover, .sidebar a.active { color: white; background-color: #1a2639; border-left: 4px solid #3498db; }
+        .sidebar a i { margin-right: 15px; width: 20px; text-align: center; }
+        .main-content { margin-left: 260px; padding-bottom: 40px; }
+        .topbar { background-color: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: flex-end; align-items: center; margin-bottom: 30px; }
+        .user-profile { display: flex; align-items: center; gap: 15px; }
+        .user-profile img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .profile-trigger { border: 0; background: transparent; display: flex; align-items: center; gap: 10px; padding: 0; text-align: left; cursor: pointer; }
+        .profile-trigger:hover strong { color: #0d6efd; }
+        h3, h5 { color:#0b1528; }
+        .card { border-radius:12px; padding:8px; }
+        .card-header { border:0; }
+        .form-control, .form-select { min-height:44px; border-color:#dce3ec; }
+        .preview-body { padding:16px!important; }
+        .table-responsive { border:1px solid #e3e9f0; border-radius:8px; }
+        .table th { background:#f7f9fc; color:#13213a; font-size:.83rem; white-space:nowrap; }
+        .table td, .table th { padding:12px; border-color:#e6ebf2; }
+        .badge { border-radius:20px; padding:7px 12px; }
+        .badge.bg-success { background:#dcf8e6!important; color:#127745; }
+        .badge.bg-danger { background:#ffe1e6!important; color:#c31a38; }
+        #contadorReportes { background:#e8f1ff; color:#0d6efd; border-radius:20px; padding:5px 12px; font-size:.9rem; font-weight:400; }
+        .report-description { min-width:200px; max-width:380px; overflow-wrap:anywhere; white-space:normal; }
+        @media(max-width:575.98px) { .export-actions { width:100%; flex-wrap:wrap; } .export-actions .btn { flex:1; } }
+    </style>
+    <link rel="stylesheet" href="responsive.css?v=20261105-header">
+    <script src="responsive.js" defer></script>
+</head>
+<body>
+
+    <!-- MENÚ LATERAL -->
+    <div class="sidebar">
+       <div class="sidebar-brand" style="line-height: 1.2;">
+    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 5px;">
+        <img src="logo.png" alt="Logo Campoterra" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid #3498db;">
+        <span>CAMPOTERRA</span>
+    </div>
+    <small style="font-size: 12px; font-weight: normal; color: #a0aabf; display: block;">CONGELADORA</small>
+</div>
+        <a href="dashboard.html"><i class="fas fa-home"></i> Panel de Inicio</a>
+        <a href="bitacoras.html"><i class="fas fa-clipboard-list"></i> Historial de Bitácoras</a>
+        <a href="maquinaria.html"><i class="fas fa-box"></i> Catálogo de Maquinaria</a>
+        <a href="areas.html"><i class="fas fa-location-dot"></i> Áreas de Mantenimiento</a>
+        <a href="personal.html"><i class="fas fa-users"></i> Control de Personal</a>
+        <a href="inventario.html"><i class="fas fa-boxes-stacked"></i> Inventario</a>
+        <a href="evaluaciones.html"><i class="fas fa-clipboard-check"></i> Evaluaciones</a>
+        <a href="reportes.html" class="active"><i class="fas fa-file-alt"></i> Reportes y Descargas</a>
+
+        <div style="position: absolute; bottom: 20px; width: 100%;">
+            <a href="login.html"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
+        </div>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <div class="topbar topbar-with-title">
+            <div class="topbar-page-title"><h1>Reportes y Descargas</h1><p>Consulta, filtra y exporta los registros de mantenimiento.</p></div>
+            <div class="user-profile">
+                <button id="profile-trigger" class="profile-trigger" type="button"
+                    data-bs-toggle="modal" data-bs-target="#profile-modal" aria-label="Editar perfil">
+                    <img id="profile-avatar"
+                        src="https://ui-avatars.com/api/?name=Usuario&background=0D8ABC&color=fff"
+                        alt="Perfil">
+                    <span style="line-height: 1.2;">
+                        <strong id="profile-name">Cargando perfil…</strong><br>
+                        <small id="profile-role" style="color: #888;"> </small>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <div class="modal fade" id="profile-modal" tabindex="-1" aria-labelledby="profile-modal-title" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <form id="profile-form">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="profile-modal-title">
+                                <i class="fas fa-user-pen text-primary me-2"></i>Editar perfil
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="profile-alert" class="alert d-none" role="alert"></div>
+                            <div class="mb-3">
+                                <label class="form-label" for="profile-name-input">Nombre</label>
+                                <input id="profile-name-input" class="form-control" type="text"
+                                    minlength="2" maxlength="100" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="profile-role-input">Cargo</label>
+                                <input id="profile-role-input" class="form-control" type="text"
+                                    minlength="2" maxlength="100" required>
+                            </div>
+                            <hr>
+                            <p class="small text-muted mb-3">Deja estos campos vacíos si no deseas cambiar la contraseña.</p>
+                            <div class="mb-3">
+                                <label class="form-label" for="profile-current-password">Contraseña actual</label>
+                                <input id="profile-current-password" class="form-control" type="password"
+                                    maxlength="255" autocomplete="current-password">
+                            </div>
+                            <div>
+                                <label class="form-label" for="profile-new-password">Nueva contraseña</label>
+                                <input id="profile-new-password" class="form-control" type="password"
+                                    minlength="8" maxlength="128" autocomplete="new-password">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                            <button id="profile-submit" type="submit" class="btn btn-primary">Guardar cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid px-4">
+            
+            <div id="errorReportes" class="alert alert-danger d-none" role="alert">No se pudieron cargar los reportes. <button id="reintentarReportes" class="btn btn-sm btn-outline-danger" type="button">Reintentar</button></div>
+
+            <!-- PANEL DE FILTROS -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-filter text-primary me-2"></i>Filtros de búsqueda</h5>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-sm-6 col-xl-3">
+                            <label for="modoFiltro" class="form-label text-muted small fw-bold">Periodo</label>
+                            <select id="modoFiltro" class="form-select">
+                                <option value="todo">Todos los periodos</option>
+                                <option value="anio">Año</option>
+                                <option value="mes">Mes</option>
+                                <option value="semana">Semana</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <label for="filtroAnio" class="form-label text-muted small fw-bold">Año</label>
+                            <select id="filtroAnio" class="form-select" disabled>
+                                <option value="">Selecciona un año</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <label for="filtroMes" class="form-label text-muted small fw-bold">Mes</label>
+                            <select id="filtroMes" class="form-select" disabled>
+                                <option value="">Selecciona un mes</option>
+                                <option value="1">Enero</option>
+                                <option value="2">Febrero</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Mayo</option>
+                                <option value="6">Junio</option>
+                                <option value="7">Julio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <label for="filtroSemana" class="form-label text-muted small fw-bold">Semana</label>
+                            <select id="filtroSemana" class="form-select" disabled>
+                                <option value="">Selecciona una semana</option>
+                            </select>
+                        </div>
+                    </div><div class="row g-3 mt-1">
+                        <div class="col-sm-6 col-xl-3"><label for="filtroMaquina" class="form-label text-muted small fw-bold">Máquina</label><select id="filtroMaquina" class="form-select"><option value="">Todas las máquinas</option></select></div>
+                        <div class="col-sm-6 col-xl-3"><label for="filtroTecnico" class="form-label text-muted small fw-bold">Técnico</label><select id="filtroTecnico" class="form-select"><option value="">Todos los técnicos</option></select></div>
+                        <div class="col-sm-6 col-xl-3">
+                            <label for="filtroTipo" class="form-label text-muted small fw-bold">Tipo de Trabajo</label>
+                            <select id="filtroTipo" class="form-select">
+                                <option value="Todos">Todos</option>
+                                <option value="Preventivo">Preventivo</option>
+                                <option value="Correctivo">Correctivo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-3 align-items-end mt-1">
+                        <div class="col-lg"><label for="buscadorReportes" class="form-label text-muted small fw-bold">Buscar registros</label><input type="search" id="buscadorReportes" class="form-control" placeholder="Folio, máquina, técnico o descripción..."></div>
+                        <div class="col-lg-auto d-flex gap-2"><button class="btn btn-primary" id="aplicarFiltros" type="button"><i class="fas fa-filter me-2"></i>Aplicar filtros</button><button class="btn btn-outline-primary" id="limpiarFiltros" type="button"><i class="fas fa-rotate me-2"></i>Limpiar</button></div>
+                    </div>
+                    <div class="mt-3 text-muted small">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        <span id="rangoFiltro">Mostrando todos los registros</span>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISTA PREVIA DE DATOS -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div><h5 class="mb-1 fw-bold">Vista previa de registros <span id="contadorReportes" role="status">Cargando…</span></h5><small class="text-muted">Resultados de acuerdo a los filtros seleccionados.</small></div>
+                    <div class="export-actions d-flex gap-2"><button class="btn btn-outline-success" id="descargarExcel" type="button"><i class="fas fa-file-excel me-2"></i>Descargar Excel</button><button class="btn btn-outline-danger" id="descargarPdf" type="button"><i class="fas fa-file-pdf me-2"></i>Descargar PDF</button></div>
+                </div>
+                <div class="card-body preview-body"><div class="table-responsive">
+                    <table class="table table-hover mb-0" id="tabla-reporte">
+                        <thead class="table-light">
+                            <tr>
+                                <th>FOLIO</th>
+                                <th>FECHA</th>
+                                <th>MÁQUINA</th>
+                                <th>ÁREA</th>
+                                <th>TÉCNICO</th>
+                                <th>TIPO</th>
+                                <th>DESCRIPCIÓN</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="7" class="text-center py-4 text-muted">Cargando registros…</td></tr>
+                        </tbody>
+                    </table></div>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-3"><small id="rangoPagina" class="text-muted" role="status"></small><nav aria-label="Páginas de reportes"><div id="paginasReportes" class="d-flex flex-wrap gap-1"></div></nav></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Librerías -->
+    <script src="vendor/supabase-2.117.2.js"></script>
+    <script src="config.js"></script>
+    <script src="cloud.js"></script>
+    <script src="auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="vendor/exceljs-4.4.0.min.js"></script>
+    <script src="vendor/jspdf-2.5.1.umd.min.js"></script>
+    <script src="vendor/jspdf-autotable-3.8.2.min.js"></script>
+
+    <script src="report-logo.js"></script>
+    <script src="report-export.js"></script>
+    <script>
+        let bitacorasGlobal = []; // Guardamos los datos aquí para filtrarlos sin consultar la BD a cada rato
+        let bitacorasFiltradas = [];
+        let paginaReportes = 1;
+        const REPORTES_POR_PAGINA = 5;
+        const meses = [
+            'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+        ];
+
+        function obtenerFecha(bitacora) {
+            if (!bitacora.fecha_registro) return null;
+            const fecha = new Date(bitacora.fecha_registro);
+            return Number.isNaN(fecha.getTime()) ? null : fecha;
+        }
+
+        function inicioSemanaUno(anio) {
+            const primeroDeEnero = new Date(anio, 0, 1);
+            primeroDeEnero.setHours(0, 0, 0, 0);
+            primeroDeEnero.setDate(primeroDeEnero.getDate() - primeroDeEnero.getDay());
+            return primeroDeEnero;
+        }
+
+        function obtenerNumeroSemana(fecha) {
+            const inicio = inicioSemanaUno(fecha.getFullYear());
+            const dias = Math.floor((fecha - inicio) / 86400000);
+            return Math.floor(dias / 7) + 1;
+        }
+
+        function obtenerRangoSemana(anio, semana) {
+            const desde = inicioSemanaUno(anio);
+            desde.setDate(desde.getDate() + ((semana - 1) * 7));
+            const hasta = new Date(desde);
+            hasta.setDate(hasta.getDate() + 6);
+            return { desde, hasta };
+        }
+
+        function formatearFecha(fecha) {
+            return fecha.toLocaleDateString('es-MX', {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            });
+        }
+
+        function cargarOpcionesAnio() {
+            const anios = [...new Set(bitacorasGlobal
+                .map(obtenerFecha)
+                .filter(Boolean)
+                .map(fecha => fecha.getFullYear()))]
+                .sort((a, b) => b - a);
+            const selector = document.getElementById('filtroAnio');
+            selector.innerHTML = '<option value="">Selecciona un año</option>';
+            anios.forEach(anio => {
+                selector.insertAdjacentHTML('beforeend', `<option value="${anio}">${anio}</option>`);
+            });
+        }
+
+        function cargarOpcionesSemana() {
+            const anio = Number(document.getElementById('filtroAnio').value);
+            const selector = document.getElementById('filtroSemana');
+            selector.innerHTML = '<option value="">Selecciona una semana</option>';
+            if (!anio) return;
+
+            const semanas = obtenerNumeroSemana(new Date(anio, 11, 31));
+            for (let semana = 1; semana <= semanas; semana += 1) {
+                const rango = obtenerRangoSemana(anio, semana);
+                selector.insertAdjacentHTML(
+                    'beforeend',
+                    `<option value="${semana}">Semana ${semana} (${formatearFecha(rango.desde)} - ${formatearFecha(rango.hasta)})</option>`
+                );
+            }
+        }
+
+        function obtenerCriterioFiltro() {
+            const modo = document.getElementById('modoFiltro').value;
+            const anio = Number(document.getElementById('filtroAnio').value);
+            const mes = Number(document.getElementById('filtroMes').value);
+            const semana = Number(document.getElementById('filtroSemana').value);
+            if (modo !== 'todo' && !anio) return { modo, incompleto: true };
+            if (modo === 'mes' && !mes) return { modo, incompleto: true };
+            if (modo === 'semana' && !semana) return { modo, incompleto: true };
+            return { modo, anio, mes, semana, incompleto: false };
+        }
+
+        function actualizarRango(criterio, cantidad) {
+            let texto = 'Mostrando todos los registros';
+            if (criterio.incompleto) {
+                texto = 'Selecciona los valores del filtro para mostrar un periodo';
+            } else if (criterio.modo === 'anio') {
+                texto = `Año ${criterio.anio}`;
+            } else if (criterio.modo === 'mes') {
+                texto = `${meses[criterio.mes - 1]} de ${criterio.anio}`;
+            } else if (criterio.modo === 'semana') {
+                const rango = obtenerRangoSemana(criterio.anio, criterio.semana);
+                texto = `Semana ${criterio.semana}: ${formatearFecha(rango.desde)} - ${formatearFecha(rango.hasta)}`;
+            }
+            document.getElementById('rangoFiltro').textContent = texto;
+            document.getElementById('contadorReportes').textContent = `(${cantidad} registro${cantidad === 1 ? '' : 's'})`;
+        }
+
+        async function cargarDatos() {
+            try {
+                const respuesta = await authenticatedFetch('http://localhost:8000/api/bitacoras/');
+                if (!respuesta.ok) throw new Error('No se pudieron cargar los reportes.');
+                const datos = await respuesta.json();
+                if (!Array.isArray(datos)) throw new Error('Respuesta inválida.');
+                bitacorasGlobal = datos;
+                document.getElementById('errorReportes').classList.add('d-none');
+                cargarOpcionesAnio();
+                [['filtroMaquina', 'nombre_equipo', 'Todas las máquinas'], ['filtroTecnico', 'nombre_tecnico', 'Todos los técnicos']].forEach(([id,campo,etiqueta]) => {
+                    const selector = document.getElementById(id);
+                    selector.replaceChildren(new Option(etiqueta, ''));
+                    [...new Set(datos.map(b => b[campo]).filter(Boolean))].sort((a,b) => a.localeCompare(b,'es')).forEach(valor => selector.add(new Option(valor, valor)));
+                });
+                aplicarFiltros();
+            } catch (error) {
+                console.error("Error al cargar datos:", error);
+                document.getElementById("errorReportes").classList.remove("d-none");
+                document.getElementById("contadorReportes").textContent = "Sin cargar";
+                document.querySelector('#tabla-reporte tbody').innerHTML =
+                    '<tr><td colspan="7" class="text-center py-4 text-muted">No se pudieron cargar los registros.</td></tr>';
+            }
+        }
+
+        function renderizarTabla(datos) {
+            const tbody = document.querySelector('#tabla-reporte tbody');
+            tbody.innerHTML = '';
+            const total = datos.length;
+            const paginas = Math.max(1, Math.ceil(total / REPORTES_POR_PAGINA));
+            paginaReportes = Math.max(1, Math.min(paginaReportes, paginas));
+            const inicio = (paginaReportes - 1) * REPORTES_POR_PAGINA;
+            document.getElementById('rangoPagina').textContent = total ? 'Mostrando ' + (inicio + 1) + ' a ' + Math.min(inicio + REPORTES_POR_PAGINA, total) + ' de ' + total + ' registros' : '0 registros';
+            const controles = document.getElementById('paginasReportes');
+            controles.replaceChildren();
+            const boton = (n,texto,disabled = false) => {
+                const button = document.createElement('button');
+                button.type = 'button'; button.textContent = texto; button.dataset.pagina = n; button.disabled = disabled;
+                button.className = 'btn btn-sm ' + (n === paginaReportes && !disabled ? 'btn-primary' : 'btn-outline-primary');
+                if (n === paginaReportes && !disabled) button.setAttribute('aria-current','page');
+                controles.append(button);
+            };
+            if (total) {
+                boton(paginaReportes - 1, '‹ Anterior', paginaReportes === 1);
+                const visibles = [...new Set([1,paginaReportes-1,paginaReportes,paginaReportes+1,paginas])].filter(n => n>=1 && n<=paginas).sort((a,b)=>a-b);
+                visibles.forEach((n,i) => { if (i && n-visibles[i-1]>1) { const puntos=document.createElement('span'); puntos.textContent='…'; puntos.className='align-self-center px-1'; controles.append(puntos); } boton(n,String(n)); });
+                boton(paginaReportes+1,'Siguiente ›',paginaReportes===paginas);
+            }
+
+
+            if(datos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No se encontraron registros para estos filtros.</td></tr>';
+                return;
+            }
+
+            datos.slice(inicio, inicio + REPORTES_POR_PAGINA).forEach(b => {
+                let badgeColor = b.tipo_mantenimiento === 'Preventivo' ? 'bg-success' : 'bg-danger';
+                let fechaCorta = b.fecha_registro
+                    ? new Date(b.fecha_registro).toLocaleDateString('es-MX')
+                    : 'Sin fecha';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="align-middle fw-bold">#${escapeHtml(b.id_bitacora)}</td>
+                        <td class="align-middle">${fechaCorta}</td>
+                        <td class="align-middle fw-bold text-primary">
+                            <div>${b.nombre_equipo ? escapeHtml(b.nombre_equipo) : '<span class="text-muted">Sin maquinaria</span>'}</div>
+                        </td>
+                        <td class="align-middle">${b.nombre_area ? escapeHtml(b.nombre_area) : '<span class="text-muted">Sin área registrada</span>'}</td>
+                        <td class="align-middle">${escapeHtml(b.nombre_tecnico)}</td>
+                        <td class="align-middle"><span class="badge ${badgeColor}">${escapeHtml(b.tipo_mantenimiento)}</span></td>
+                        <td class="align-middle report-description">${escapeHtml(b.descripcion)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function aplicarFiltros() {
+            const criterio = obtenerCriterioFiltro();
+            const fTipo = document.getElementById('filtroTipo').value;
+            const normalizar = valor => String(valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const texto = normalizar(document.getElementById('buscadorReportes').value.trim());
+            const maquina = document.getElementById('filtroMaquina').value;
+            const tecnico = document.getElementById('filtroTecnico').value;
+
+            let filtrados = criterio.incompleto ? [] : bitacorasGlobal.filter(b => {
+                const fecha = obtenerFecha(b);
+                if (criterio.modo === 'todo') return true;
+                if (!fecha) return false;
+                if (criterio.modo === 'semana') {
+                    const { desde, hasta } = obtenerRangoSemana(criterio.anio, criterio.semana);
+                    const finExclusivo = new Date(hasta);
+                    finExclusivo.setDate(finExclusivo.getDate() + 1);
+                    return fecha >= desde && fecha < finExclusivo;
+                }
+                if (fecha.getFullYear() !== criterio.anio) return false;
+                if (criterio.modo === 'mes') return fecha.getMonth() + 1 === criterio.mes;
+                return true;
+            });
+            if (maquina) filtrados = filtrados.filter(b => b.nombre_equipo === maquina);
+            if (tecnico) filtrados = filtrados.filter(b => b.nombre_tecnico === tecnico);
+            if (fTipo !== 'Todos') {
+                filtrados = filtrados.filter(b => b.tipo_mantenimiento === fTipo);
+            }
+            if (texto) {
+                filtrados = filtrados.filter(b => [
+                    b.id_bitacora, b.nombre_area, b.nombre_equipo, b.nombre_tecnico,
+                    b.tipo_mantenimiento, b.descripcion, b.detalles_repuestos
+                ].some(valor => normalizar(valor).includes(texto)));
+            }
+            filtrados.sort((a, b) => {
+                const fechaA = obtenerFecha(a);
+                const fechaB = obtenerFecha(b);
+                if (!fechaA && !fechaB) return 0;
+                if (!fechaA) return 1;
+                if (!fechaB) return -1;
+                return fechaA - fechaB;
+            });
+            bitacorasFiltradas = filtrados;
+            paginaReportes = 1;
+            actualizarRango(criterio, filtrados.length);
+            renderizarTabla(filtrados);
+        }
+
+        async function exportarReporte(formato) {
+            aplicarFiltros();
+            if (!bitacorasFiltradas.length) { alert('No hay registros filtrados para exportar.'); return; }
+            const botones = ['descargarExcel', 'descargarPdf'].map(id => document.getElementById(id));
+            if (botones.some(b => b.disabled)) return;
+            botones.forEach(b => b.disabled = true);
+            try {
+                await CampoterraExport[formato]([...bitacorasFiltradas], {
+                    period: document.getElementById('rangoFiltro').textContent,
+                    filters: `Máquina: ${document.getElementById('filtroMaquina').value || 'Todas'} | Técnico: ${document.getElementById('filtroTecnico').value || 'Todos'} | Tipo: ${document.getElementById('filtroTipo').value} | Búsqueda: ${document.getElementById('buscadorReportes').value.trim() || 'Sin filtro'}`,
+                    generated: new Date().toLocaleString('es-MX'),
+                    filename: `Reporte_Campoterra_${obtenerNombrePeriodo()}`
+                });
+            } catch (error) { alert(`No se pudo generar el archivo. ${error.message}`); }
+            finally { botones.forEach(b => b.disabled = false); }
+        }
+        function descargarExcel() { return exportarReporte('excel'); }
+
+        function obtenerNombrePeriodo() {
+            const criterio = obtenerCriterioFiltro();
+            if (criterio.incompleto || criterio.modo === 'todo') return 'Todo';
+            if (criterio.modo === 'anio') return `${criterio.anio}`;
+            if (criterio.modo === 'mes') return `${criterio.anio}-${String(criterio.mes).padStart(2, '0')}`;
+            return `${criterio.anio}-Semana-${String(criterio.semana).padStart(2, '0')}`;
+        }
+
+        function descargarPdf() { return exportarReporte('pdf'); }
+
+        function actualizarControles() {
+            const modo = document.getElementById('modoFiltro').value;
+            const anioActivo = ['anio', 'mes', 'semana'].includes(modo);
+            document.getElementById('filtroAnio').disabled = !anioActivo;
+            document.getElementById('filtroMes').disabled = modo !== 'mes';
+            document.getElementById('filtroSemana').disabled = modo !== 'semana';
+            if (modo !== 'mes') document.getElementById('filtroMes').value = '';
+            if (modo !== 'semana') document.getElementById('filtroSemana').value = '';
+            if (!anioActivo) document.getElementById('filtroAnio').value = '';
+            if (anioActivo) cargarOpcionesSemana();
+            aplicarFiltros();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('reintentarReportes').addEventListener('click', cargarDatos);
+            ['filtroMaquina','filtroTecnico'].forEach(id => document.getElementById(id).addEventListener('change', aplicarFiltros));
+            document.getElementById('limpiarFiltros').addEventListener('click', () => {
+                ['filtroAnio','filtroMes','filtroSemana','filtroMaquina','filtroTecnico','buscadorReportes'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('modoFiltro').value = 'todo';
+                document.getElementById('filtroTipo').value = 'Todos';
+                actualizarControles();
+            });
+            document.getElementById('paginasReportes').addEventListener('click', event => {
+                const button = event.target.closest('[data-pagina]');
+                if (!button || button.disabled) return;
+                paginaReportes = Number(button.dataset.pagina);
+                renderizarTabla(bitacorasFiltradas);
+                document.querySelector('#paginasReportes [aria-current]')?.focus({preventScroll:true});
+            });
+            document.getElementById('modoFiltro').addEventListener('change', actualizarControles);
+            document.getElementById('filtroAnio').addEventListener('change', () => {
+                cargarOpcionesSemana();
+                aplicarFiltros();
+            });
+            document.getElementById('filtroMes').addEventListener('change', aplicarFiltros);
+            document.getElementById('filtroSemana').addEventListener('change', aplicarFiltros);
+            document.getElementById('filtroTipo').addEventListener('change', aplicarFiltros);
+            document.getElementById('buscadorReportes').addEventListener('input', aplicarFiltros);
+            document.getElementById('aplicarFiltros').addEventListener('click', aplicarFiltros);
+            document.getElementById('descargarExcel').addEventListener('click', descargarExcel);
+            document.getElementById('descargarPdf').addEventListener('click', descargarPdf);
+            cargarDatos();
+        });
+
+        const PROFILE_URL = 'http://localhost:8000/api/mi-perfil';
+
+        function mostrarPerfil(perfil) {
+            document.getElementById('profile-name').textContent = perfil.nombre;
+            document.getElementById('profile-role').textContent = perfil.cargo;
+            document.getElementById('profile-avatar').src =
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(perfil.nombre)}&background=0D8ABC&color=fff`;
+            document.getElementById('profile-name-input').value = perfil.nombre;
+            document.getElementById('profile-role-input').value = perfil.cargo;
+        }
+
+        function mostrarAlertaPerfil(mensaje, tipo = 'danger') {
+            const alerta = document.getElementById('profile-alert');
+            alerta.className = `alert alert-${tipo}`;
+            alerta.textContent = mensaje;
+        }
+
+        async function cargarPerfil() {
+            try {
+                const respuesta = await authenticatedFetch(PROFILE_URL);
+                if (!respuesta.ok) throw new Error('No se pudo cargar el perfil.');
+                mostrarPerfil(await respuesta.json());
+            } catch (error) {
+                console.error('Error al cargar el perfil:', error);
+            }
+        }
+
+        async function guardarPerfil(event) {
+            event.preventDefault();
+            const boton = document.getElementById('profile-submit');
+            const nuevaContrasena = document.getElementById('profile-new-password').value;
+            const contrasenaActual = document.getElementById('profile-current-password').value;
+            const alerta = document.getElementById('profile-alert');
+            alerta.className = 'alert d-none';
+            boton.disabled = true;
+            try {
+                const respuesta = await authenticatedFetch(PROFILE_URL, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nombre: document.getElementById('profile-name-input').value.trim(),
+                        cargo: document.getElementById('profile-role-input').value.trim(),
+                        contrasena_actual: contrasenaActual || null,
+                        nueva_contrasena: nuevaContrasena || null
+                    })
+                });
+                const datos = await respuesta.json();
+                if (!respuesta.ok) throw new Error(datos.detail || 'No se pudo actualizar el perfil.');
+                mostrarPerfil(datos);
+                document.getElementById('profile-current-password').value = '';
+                document.getElementById('profile-new-password').value = '';
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('profile-modal')).hide();
+            } catch (error) {
+                mostrarAlertaPerfil(error.message);
+            } finally {
+                boton.disabled = false;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('profile-form').addEventListener('submit', guardarPerfil);
+            document.getElementById('profile-modal').addEventListener('show.bs.modal', () => {
+                document.getElementById('profile-alert').className = 'alert d-none';
+            });
+            cargarPerfil();
+        });
+    </script>
+</body>
+</html>

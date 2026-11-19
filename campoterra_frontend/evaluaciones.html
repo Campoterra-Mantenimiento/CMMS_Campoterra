@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluaciones | Campoterra CMMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+        .sidebar { height: 100vh; width: 260px; background-color: #0b1528; position: fixed; top: 0; left: 0; padding-top: 20px; color: white; z-index: 1000; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; margin-bottom: 40px; letter-spacing: 1px; }
+        .sidebar-brand i { font-size: 1.8rem; margin-right: 10px; }
+        .sidebar a { padding: 15px 25px; text-decoration: none; font-size: 15px; color: #a0aabf; display: block; transition: 0.3s; }
+        .sidebar a:hover, .sidebar a.active { color: white; background-color: #1a2639; border-left: 4px solid #3498db; }
+        .sidebar a i { margin-right: 15px; width: 20px; text-align: center; }
+        .main-content { margin-left: 260px; padding-bottom: 40px; }
+        .topbar { background-color: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: flex-end; align-items: center; margin-bottom: 30px; }
+        .user-profile { display: flex; align-items: center; gap: 15px; }
+        .user-profile img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .profile-trigger { border: 0; background: transparent; display: flex; align-items: center; gap: 10px; padding: 0; text-align: left; cursor: pointer; }
+        .profile-trigger:hover strong { color: #0d6efd; }
+        h3, h5 { color:#0b1528; }
+        .card { border-radius:12px; padding:8px; }
+        .card-header { border:0; }
+        .form-control, .form-select { min-height:44px; border-color:#dce3ec; }
+        .preview-body { padding:16px!important; }
+        .table-responsive { border:1px solid #e3e9f0; border-radius:8px; }
+        .table th { background:#f7f9fc; color:#13213a; font-size:.83rem; white-space:nowrap; }
+        .table td, .table th { padding:12px; border-color:#e6ebf2; }
+        .badge { border-radius:20px; padding:7px 12px; }
+        .badge.bg-success { background:#dcf8e6!important; color:#127745; }
+        .badge.bg-danger { background:#ffe1e6!important; color:#c31a38; }
+        #contadorReportes { background:#e8f1ff; color:#0d6efd; border-radius:20px; padding:5px 12px; font-size:.9rem; font-weight:400; }
+        .report-description { min-width:200px; max-width:380px; overflow-wrap:anywhere; white-space:normal; }
+        @media(max-width:575.98px) { .export-actions { width:100%; flex-wrap:wrap; } .export-actions .btn { flex:1; } }
+    </style>
+    <link rel="stylesheet" href="responsive.css?v=20261105-header">
+    <link rel="stylesheet" href="evaluaciones.css?v=20261104-diseno">
+    <script src="responsive.js" defer></script>
+</head>
+<body>
+
+    <!-- MENÚ LATERAL -->
+    <div class="sidebar">
+       <div class="sidebar-brand" style="line-height: 1.2;">
+    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 5px;">
+        <img src="logo.png" alt="Logo Campoterra" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid #3498db;">
+        <span>CAMPOTERRA</span>
+    </div>
+    <small style="font-size: 12px; font-weight: normal; color: #a0aabf; display: block;">CONGELADORA</small>
+</div>
+        <a href="dashboard.html"><i class="fas fa-home"></i> Panel de Inicio</a>
+        <a href="bitacoras.html"><i class="fas fa-clipboard-list"></i> Historial de Bitácoras</a>
+        <a href="maquinaria.html"><i class="fas fa-box"></i> Catálogo de Maquinaria</a>
+        <a href="areas.html"><i class="fas fa-location-dot"></i> Áreas de Mantenimiento</a>
+        <a href="personal.html"><i class="fas fa-users"></i> Control de Personal</a>
+        <a href="inventario.html"><i class="fas fa-boxes-stacked"></i> Inventario</a>
+        <a href="evaluaciones.html" class="active"><i class="fas fa-clipboard-check"></i> Evaluaciones</a>
+        <a href="reportes.html"><i class="fas fa-file-alt"></i> Reportes y Descargas</a>
+
+        <div style="position: absolute; bottom: 20px; width: 100%;">
+            <a href="login.html"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
+        </div>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <div class="topbar topbar-with-title">
+            <div class="topbar-page-title"><h1>Evaluaciones de Mantenimiento</h1><p>Asigna actividades, registra resultados y evalúa el desempeño de los técnicos.</p></div>
+            <div class="user-profile">
+                <button id="profile-trigger" class="profile-trigger" type="button"
+                    data-bs-toggle="modal" data-bs-target="#profile-modal" aria-label="Editar perfil">
+                    <img id="profile-avatar"
+                        src="https://ui-avatars.com/api/?name=Usuario&background=0D8ABC&color=fff"
+                        alt="Perfil">
+                    <span style="line-height: 1.2;">
+                        <strong id="profile-name">Cargando perfil…</strong><br>
+                        <small id="profile-role" style="color: #888;"> </small>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <div class="modal fade" id="profile-modal" tabindex="-1" aria-labelledby="profile-modal-title" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <form id="profile-form">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="profile-modal-title">
+                                <i class="fas fa-user-pen text-primary me-2"></i>Editar perfil
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="profile-alert" class="alert d-none" role="alert"></div>
+                            <div class="mb-3">
+                                <label class="form-label" for="profile-name-input">Nombre</label>
+                                <input id="profile-name-input" class="form-control" type="text"
+                                    minlength="2" maxlength="100" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="profile-role-input">Cargo</label>
+                                <input id="profile-role-input" class="form-control" type="text"
+                                    minlength="2" maxlength="100" required>
+                            </div>
+                            <hr>
+                            <p class="small text-muted mb-3">Deja estos campos vacíos si no deseas cambiar la contraseña.</p>
+                            <div class="mb-3">
+                                <label class="form-label" for="profile-current-password">Contraseña actual</label>
+                                <input id="profile-current-password" class="form-control" type="password"
+                                    maxlength="255" autocomplete="current-password">
+                            </div>
+                            <div>
+                                <label class="form-label" for="profile-new-password">Nueva contraseña</label>
+                                <input id="profile-new-password" class="form-control" type="password"
+                                    minlength="8" maxlength="128" autocomplete="new-password">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                            <button id="profile-submit" type="submit" class="btn btn-primary">Guardar cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid px-4">
+<header class="eval-heading"><div class="eval-week-chip" id="grades-week-chip" hidden><i class="fas fa-calendar-days" aria-hidden="true"></i><strong id="eval-week">Cargando semana…</strong></div></header>
+<nav class="eval-tabs" aria-label="Secciones de evaluaciones"><button type="button" id="tab-activities" aria-controls="activities-view" aria-pressed="true">Asignar y dar seguimiento</button><button type="button" id="tab-grades" aria-controls="grades-view" aria-pressed="false">Calificaciones y reportes</button></nav><div id="activities-view"><section class="eval-panel mb-3" id="actividades-panel" aria-labelledby="act-title">
+<div class="d-flex flex-wrap justify-content-between gap-2"><div><h2 id="act-title">Actividades de mantenimiento</h2><p class="eval-caption">Asigna las tareas y registra lo realizado con apoyo de la bitácora. La calificación la coloca el encargado.</p></div></div>
+<div id="act-message" class="alert d-none" role="status"></div>
+<div class="activity-stats" aria-label="Resumen de actividades">
+<article class="activity-stat total"><span aria-hidden="true">☷</span><div>Total<strong id="act-total">—</strong></div></article>
+<article class="activity-stat pending"><span aria-hidden="true">◷</span><div>Pendientes<strong id="act-pending">—</strong></div></article>
+<article class="activity-stat done"><span aria-hidden="true">✓</span><div>Realizadas<strong id="act-done">—</strong></div></article>
+<article class="activity-stat missed"><span aria-hidden="true">×</span><div>No realizadas<strong id="act-missed">—</strong></div></article></div>
+<div class="row g-3 mb-3">
+<label class="col-sm-3">Fecha de las actividades<input type="date" id="act-date" class="form-control" required></label>
+<label class="col-sm-3">Técnico<select id="act-tech" class="form-select"><option value="">Todos</option></select></label>
+<label class="col-sm-3">Consultar<select id="act-period" class="form-select"><option value="dia">Día</option><option value="semana">Semana (domingo a sábado)</option></select></label>
+<div class="col-sm-3 d-flex align-items-end flex-wrap gap-2"><button type="button" id="act-load" class="btn btn-outline-primary">Consultar</button><button type="button" id="act-new" class="btn btn-primary" disabled>Nueva actividad</button><button type="button" id="act-export-day-pdf" class="btn btn-outline-danger" disabled title="Descarga todas las actividades de la fecha y técnico seleccionados, sin aplicar la búsqueda del listado">PDF diario</button></div>
+</div>
+<section class="border rounded p-3 mb-3" aria-labelledby="act-report-title">
+<h3 id="act-report-title" class="h5">Reporte semanal de actividades</h3>
+<p class="eval-caption">Descarga la semana completa, de domingo a sábado. Incluye todas sus páginas de actividades guardadas; no aplica la búsqueda del listado.</p>
+<div class="row g-3 align-items-end">
+<label class="col-sm-2">Año<input id="act-report-year" type="number" min="2000" max="2100" step="1" class="form-control"></label>
+<label class="col-sm-2">Semana<input id="act-report-week" type="number" min="1" max="54" step="1" class="form-control"></label>
+<label class="col-sm-4">Técnico del reporte<select id="act-report-tech" class="form-select"><option value="">Todos</option></select></label>
+<div class="col-sm-4 d-flex flex-wrap gap-2"><button type="button" id="act-export-excel" class="btn btn-outline-success" disabled>Excel semanal</button><button type="button" id="act-export-pdf" class="btn btn-outline-danger" disabled>PDF semanal</button></div>
+</div><p id="act-report-range" class="eval-caption mt-2 mb-0" aria-live="polite"></p>
+</section><p id="act-range" class="eval-caption"></p><p id="act-summary" class="visually-hidden" aria-live="polite"></p>
+<form id="act-form" hidden class="border rounded p-3 mb-3"><fieldset id="act-fields"><h3 class="h5" id="act-form-title">Nueva actividad</h3>
+<div class="activity-editor-grid"><div><div class="row g-3"><label class="col-sm-4">Fecha<input id="act-work-date" type="date" class="form-control" required></label>
+<label class="col-sm-4">Técnico<select id="act-assignee" class="form-select" required></select></label>
+<label class="col-sm-4">Tipo<select id="act-type" class="form-select" required><option value="">Selecciona un tipo</option><option>Preventiva</option><option>Correctiva</option><option>Emergente</option></select></label></div>
+<label class="d-block mt-3">Turno<select id="act-shift" class="form-select"><option value="">Sin asignar</option><option value="Día">Día · 06:00–14:00</option><option value="Tarde">Tarde · 14:00–22:00</option><option value="Noche">Noche · 22:00–06:00 (día siguiente)</option></select></label><p class="eval-caption">Para el turno nocturno, selecciona la fecha en que inicia.</p>
+<label class="d-block mt-3">Actividad<textarea id="act-description" class="form-control" rows="2" maxlength="1000" required></textarea></label>
+<label class="d-block mt-3">Observaciones<textarea id="act-notes" class="form-control" rows="2" maxlength="2000"></textarea></label>
+<small class="text-muted">Al editar se conservan el técnico y la fecha originales.</small></div>
+<fieldset class="activity-outcomes"><legend>Resultado de la actividad</legend><div class="outcome-options">
+<label class="outcome pending"><input type="radio" name="act-result" value="Pendiente" checked><span aria-hidden="true">◷</span><strong>Pendiente</strong></label>
+<label class="outcome done"><input type="radio" name="act-result" value="Realizada"><span aria-hidden="true">✓</span><strong>Realizada</strong></label>
+<label class="outcome missed"><input type="radio" name="act-result" value="No realizada"><span aria-hidden="true">×</span><strong>No realizada</strong></label>
+</div><p id="act-status-help" class="eval-caption mt-3"></p></fieldset></div>
+<div class="d-flex flex-wrap gap-3 align-items-center mt-3"><button type="submit" class="btn btn-primary">Guardar actividad</button><button type="button" id="act-cancel" class="btn btn-outline-secondary">Cancelar</button><label class="ms-sm-auto"><input type="checkbox" id="act-another" class="form-check-input me-2">Guardar y agregar otra</label></div>
+</fieldset></form>
+<div class="activity-list-heading"><h3 class="h5">Actividades registradas</h3><label><span class="visually-hidden">Buscar actividad, técnico u observaciones</span><input id="act-search" type="search" class="form-control" placeholder="Buscar actividad o técnico…"></label></div><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Fecha / técnico</th><th>Turno</th><th>Actividad</th><th>Tipo</th><th>Resultado</th><th>Observaciones</th><th>Acción</th></tr></thead><tbody id="act-rows"><tr><td colspan="7">Cargando actividades…</td></tr></tbody></table></div>
+<div class="d-flex justify-content-between align-items-center gap-2"><small id="act-page-label"></small><div class="d-flex gap-2"><button type="button" id="act-prev" class="btn btn-sm btn-outline-primary">Anterior</button><button type="button" id="act-next" class="btn btn-sm btn-outline-primary">Siguiente</button></div></div>
+</section>
+</div><div id="grades-view" hidden><div id="eval-message" class="alert d-none" role="status"></div>
+<section class="eval-stats" aria-label="Resumen de evaluaciones">
+<article class="eval-panel eval-stat"><span class="eval-icon"><i class="fas fa-chart-column" aria-hidden="true"></i></span><div><h2>Promedio semanal</h2><strong id="eval-average">—</strong><small id="eval-comparison">Solo días evaluados</small></div></article>
+<article class="eval-panel eval-stat"><span class="eval-icon"><i class="fas fa-users" aria-hidden="true"></i></span><div><h2>Evaluados en la fecha</h2><strong id="eval-count">—</strong><small>Técnicos activos · fecha consultada</small></div></article>
+<article class="eval-panel eval-stat"><span class="eval-icon gold"><i class="fas fa-star" aria-hidden="true"></i></span><div><h2>Mayor promedio</h2><strong id="eval-best">—</strong><small id="eval-best-note">Promedio semanal</small></div></article>
+<article class="eval-panel eval-stat"><span class="eval-icon coral"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span><div><h2>Sin evaluar</h2><strong id="eval-pending">—</strong><small>No implica incumplimiento</small></div></article>
+</section>
+<section class="eval-panel eval-filters" aria-label="Filtros">
+<label>Fecha del trabajo<input type="date" id="eval-date" class="form-control"></label>
+<label>Técnico<select id="eval-filter-tech" class="form-select"><option value="">Todos</option></select></label>
+<button id="eval-load" class="btn btn-primary" type="button"><i class="fas fa-search me-2" aria-hidden="true"></i>Consultar</button>
+<button id="eval-export" class="btn btn-outline-primary" type="button" disabled><i class="fas fa-download me-2" aria-hidden="true"></i>Excel semanal</button>
+<button id="eval-export-pdf" class="btn btn-outline-danger" type="button" disabled><i class="fas fa-file-pdf me-2" aria-hidden="true"></i>PDF semanal</button>
+</section>
+<p class="eval-caption">Los filtros se aplican a las tablas, promedios y exportación.</p>
+<div class="eval-main-grid">
+<section class="eval-panel"><h2>Evaluación diaria</h2><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Técnico</th><th>Calificación</th><th>Estado</th><th>Última evaluación</th><th>Acción</th></tr></thead><tbody id="eval-rows"></tbody></table></div></section>
+<section class="eval-panel"><h2>Promedio semanal por técnico</h2><p class="eval-caption">Días sin evaluación excluidos del promedio.</p><div id="eval-chart"></div></section>
+</div>
+<div class="card p-3 mb-3" id="eval-editor" hidden><h5 id="eval-title"></h5>
+<form id="eval-form"><fieldset id="eval-fields">
+<div class="row g-3" id="eval-grades"></div>
+<label class="d-block mt-3">Observaciones<textarea id="eval-notes" class="form-control" maxlength="2000" rows="3"></textarea></label>
+<div class="d-flex flex-wrap gap-3 align-items-center mt-3"><strong id="eval-score" aria-live="polite"></strong><button type="submit" class="btn btn-primary">Guardar evaluación</button><button id="eval-cancel" type="button" class="btn btn-outline-secondary">Cancelar</button></div>
+</fieldset></form><small class="text-muted">1 Deficiente · 2 Requiere mejora · 3 Satisfactorio · 4 Bueno · 5 Excelente</small></div>
+<div class="eval-bottom-grid">
+<section class="eval-panel"><h2>Criterios de evaluación</h2>
+<ul class="eval-criteria">
+<li><span class="eval-icon"><i class="fas fa-award" aria-hidden="true"></i></span><div><strong>Calidad del trabajo (25 %)</strong><small>Correcta ejecución de las actividades de mantenimiento.</small></div></li>
+<li><span class="eval-icon"><i class="fas fa-clipboard-check" aria-hidden="true"></i></span><div><strong>Cumplimiento de la tarea (25 %)</strong><small>Realización de las actividades asignadas.</small></div></li>
+<li><span class="eval-icon"><i class="fas fa-broom" aria-hidden="true"></i></span><div><strong>Orden y limpieza (25 %)</strong><small>Cuidado del área, herramientas y equipos.</small></div></li>
+<li><span class="eval-icon"><i class="fas fa-file-lines" aria-hidden="true"></i></span><div><strong>Reporte y documentación (25 %)</strong><small>Registro completo y claro del trabajo realizado.</small></div></li>
+</ul><p class="eval-caption mb-0">Cada criterio se califica de 1 a 5. Resultado diario = suma × 5. El semanal es el promedio de los resultados diarios.</p>
+</section>
+<section class="eval-panel"><div class="eval-history-heading"><h2>Desempeño diario de la semana</h2><label class="visually-hidden" for="eval-history-tech">Técnico del historial</label><select id="eval-history-tech" class="form-select"></select></div><p class="eval-caption">Calificación de cada día de la semana consultada · los días sin evaluación quedan sin punto, no cuentan como cero.</p><div id="eval-history"></div></section>
+</div></div>
+</div></div>
+    <!-- Librerías -->
+    <script src="vendor/supabase-2.117.2.js"></script>
+    <script src="config.js"></script>
+    <script src="cloud.js?v=20261112-turnos"></script>
+    <script src="auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="vendor/exceljs-4.4.0.min.js"></script>
+    <script src="vendor/jspdf-2.5.1.umd.min.js"></script>
+    <script src="vendor/jspdf-autotable-3.8.2.min.js"></script>
+
+    <script src="report-logo.js"></script>
+    <script src="report-export.js"></script>
+    <script src="evaluaciones.js?v=20261113-semanales" defer></script>
+    <script src="actividades-export.js?v=20261113-diario" defer></script>
+    <script src="actividades.js?v=20261113-diario" defer></script>
+    <script>
+        const PROFILE_URL = 'http://localhost:8000/api/mi-perfil';
+
+        function mostrarPerfil(perfil) {
+            document.getElementById('profile-name').textContent = perfil.nombre;
+            document.getElementById('profile-role').textContent = perfil.cargo;
+            document.getElementById('profile-avatar').src =
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(perfil.nombre)}&background=0D8ABC&color=fff`;
+            document.getElementById('profile-name-input').value = perfil.nombre;
+            document.getElementById('profile-role-input').value = perfil.cargo;
+        }
+
+        function mostrarAlertaPerfil(mensaje, tipo = 'danger') {
+            const alerta = document.getElementById('profile-alert');
+            alerta.className = `alert alert-${tipo}`;
+            alerta.textContent = mensaje;
+        }
+
+        async function cargarPerfil() {
+            try {
+                const respuesta = await authenticatedFetch(PROFILE_URL);
+                if (!respuesta.ok) throw new Error('No se pudo cargar el perfil.');
+                mostrarPerfil(await respuesta.json());
+            } catch (error) {
+                console.error('Error al cargar el perfil:', error);
+            }
+        }
+
+        async function guardarPerfil(event) {
+            event.preventDefault();
+            const boton = document.getElementById('profile-submit');
+            const nuevaContrasena = document.getElementById('profile-new-password').value;
+            const contrasenaActual = document.getElementById('profile-current-password').value;
+            const alerta = document.getElementById('profile-alert');
+            alerta.className = 'alert d-none';
+            boton.disabled = true;
+            try {
+                const respuesta = await authenticatedFetch(PROFILE_URL, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nombre: document.getElementById('profile-name-input').value.trim(),
+                        cargo: document.getElementById('profile-role-input').value.trim(),
+                        contrasena_actual: contrasenaActual || null,
+                        nueva_contrasena: nuevaContrasena || null
+                    })
+                });
+                const datos = await respuesta.json();
+                if (!respuesta.ok) throw new Error(datos.detail || 'No se pudo actualizar el perfil.');
+                mostrarPerfil(datos);
+                document.getElementById('profile-current-password').value = '';
+                document.getElementById('profile-new-password').value = '';
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('profile-modal')).hide();
+            } catch (error) {
+                mostrarAlertaPerfil(error.message);
+            } finally {
+                boton.disabled = false;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('profile-form').addEventListener('submit', guardarPerfil);
+            document.getElementById('profile-modal').addEventListener('show.bs.modal', () => {
+                document.getElementById('profile-alert').className = 'alert d-none';
+            });
+            cargarPerfil();
+        });
+    </script>
+</body>
+</html>
+

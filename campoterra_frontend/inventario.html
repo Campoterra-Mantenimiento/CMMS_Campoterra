@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campoterra CMMS | Inventario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { height: 100vh; width: 260px; background: #0b1528; position: fixed; inset: 0 auto 0 0; padding-top: 20px; color: white; }
+        .sidebar-brand { font-size: 1.2rem; font-weight: bold; text-align: center; margin-bottom: 40px; letter-spacing: 1px; }
+        .sidebar a { padding: 15px 25px; text-decoration: none; font-size: 15px; color: #a0aabf; display: block; }
+        .sidebar a:hover, .sidebar a.active { color: white; background: #1a2639; border-left: 4px solid #3498db; }
+        .sidebar a i { margin-right: 15px; width: 20px; text-align: center; }
+        .main-content { margin-left: 260px; padding-bottom: 40px; }
+        .topbar { background: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .user-profile { display: flex; align-items: center; gap: 15px; }
+        .user-profile img { width: 40px; height: 40px; border-radius: 50%; }
+        .profile-trigger { border: 0; background: transparent; display: flex; align-items: center; gap: 10px; padding: 0; text-align: left; cursor: pointer; }
+        .profile-trigger:hover strong { color: #0d6efd; }
+        .sync-status { min-width: 220px; }
+        @media (max-width: 800px) { .sidebar { width: 210px; } .main-content { margin-left: 210px; } .topbar { padding: 15px; } }
+
+        .inventory-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-bottom:20px; }
+        .inventory-stat { background:white; border-radius:12px; padding:22px; display:flex; gap:18px; align-items:center; }
+        .inventory-stat i { width:60px; height:60px; display:grid; place-items:center; border-radius:50%; background:#e8f1ff; color:#0d6efd; font-size:25px; flex-shrink:0; }
+        .inventory-stat.warning i { background:#fff7e8; color:#df9600; }
+        .inventory-stat.danger i { background:#ffebee; color:#dc3545; }
+        .inventory-stat strong { display:block; font-size:2rem; line-height:1.2; color:#0b1528; }
+        .inventory-card { border-radius:12px; }
+        .inventory-card h5, .topbar h4 { color:#0b1528!important; font-weight:700; }
+        .inventory-filters { display:flex; flex-wrap:wrap; gap:12px; margin:24px 0 18px; }
+        .inventory-filters .search-field { flex:2 1 260px; position:relative; }
+        .search-field i { position:absolute; left:14px; top:14px; color:#78869b; }
+        .search-field input { padding-left:40px; background:#f5f7fa; }
+        .inventory-filters select { flex:1 1 180px; width:auto; }
+        .inventory-card .table-responsive { border:1px solid #e6ebf2; border-radius:8px; }
+        .inventory-card th { color:#14213b; font-size:.85rem; background:#f7f9fc; white-space:nowrap; }
+        .inventory-card td, .inventory-card th { padding:14px; border-color:#e6ebf2; }
+        .inventory-card .badge { font-weight:500; padding:7px 10px; }
+        .inventory-card .btn-outline-secondary { border-color:#ccd6e3; color:#42536c; }
+        .movement-filters { display:flex; flex-wrap:wrap; gap:12px; }
+        .movement-filters select { width:auto; min-width:170px; }
+        @media(min-width:1200px) { #entradaModal .modal-dialog { margin:86px 24px 24px auto; } }
+        @media(max-width:575.98px) {
+            .inventory-summary { grid-template-columns:1fr; gap:10px; }
+            .inventory-stat { padding:14px 18px; }
+            .inventory-stat strong { font-size:1.6rem; }
+            .movement-filters, .movement-filters select { width:100%; }
+        }
+    </style>
+    <link rel="stylesheet" href="responsive.css">
+    <script src="responsive.js" defer></script>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-brand" style="line-height: 1.2;">
+            <div style="display:flex;align-items:center;justify-content:center;margin-bottom:5px;">
+                <img src="logo.png" alt="Logo Campoterra" style="width:38px;height:38px;border-radius:50%;object-fit:cover;margin-right:12px;border:2px solid #3498db;">
+                <span>CAMPOTERRA</span>
+            </div>
+            <small style="font-size:12px;font-weight:normal;color:#a0aabf;display:block;">CONGELADORA</small>
+        </div>
+        <a href="dashboard.html"><i class="fas fa-home"></i> Panel de Inicio</a>
+        <a href="bitacoras.html"><i class="fas fa-clipboard-list"></i> Historial de Bitácoras</a>
+        <a href="maquinaria.html"><i class="fas fa-box"></i> Catálogo de Maquinaria</a>
+        <a href="areas.html"><i class="fas fa-location-dot"></i> Áreas de Mantenimiento</a>
+        <a href="personal.html"><i class="fas fa-users"></i> Control de Personal</a>
+        <a href="inventario.html" class="active"><i class="fas fa-boxes-stacked"></i> Inventario</a>
+        <a href="evaluaciones.html"><i class="fas fa-clipboard-check"></i> Evaluaciones</a>
+        <a href="reportes.html"><i class="fas fa-file-alt"></i> Reportes y Descargas</a>
+        <div style="position:absolute;bottom:20px;width:100%;"><a href="login.html"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a></div>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <div>
+                <h4 class="mb-1 text-secondary">Inventario de refacciones</h4>
+                <small class="text-muted">Existencias actuales y movimientos de almacén</small>
+            </div>
+            <div class="user-profile">
+                <div class="sync-status text-end">
+                    <div id="inventario-sync-status" class="small text-muted" role="status">Sincronización pendiente</div>
+                    <small id="inventario-last-update" class="text-muted">Última actualización: pendiente</small>
+                </div>
+                <button id="btnActualizarInventario" class="btn btn-outline-primary btn-sm" type="button">
+                    <i class="fas fa-sync-alt me-1"></i> Actualizar ahora
+                </button>
+                <button id="profile-trigger" class="profile-trigger" type="button"
+                    data-bs-toggle="modal" data-bs-target="#profile-modal" aria-label="Editar perfil">
+                    <img id="profile-avatar"
+                        src="https://ui-avatars.com/api/?name=Usuario&background=0D8ABC&color=fff"
+                        alt="Perfil">
+                    <span style="line-height: 1.2;">
+                        <strong id="profile-name">Cargando perfil…</strong><br>
+                        <small id="profile-role" class="text-muted"> </small>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <div class="modal fade" id="profile-modal" tabindex="-1" aria-labelledby="profile-modal-title" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <form id="profile-form">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="profile-modal-title">
+                                <i class="fas fa-user-pen text-primary me-2"></i>Editar perfil
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="profile-alert" class="alert d-none" role="alert"></div>
+                            <div class="mb-3">
+                                <label class="form-label" for="profile-name-input">Nombre</label>
+                                <input id="profile-name-input" class="form-control" type="text"
+                                    minlength="2" maxlength="100" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="profile-role-input">Cargo</label>
+                                <input id="profile-role-input" class="form-control" type="text"
+                                    minlength="2" maxlength="100" required>
+                            </div>
+                            <hr>
+                            <p class="small text-muted mb-3">Deja estos campos vacíos si no deseas cambiar la contraseña.</p>
+                            <div class="mb-3">
+                                <label class="form-label" for="profile-current-password">Contraseña actual</label>
+                                <input id="profile-current-password" class="form-control" type="password"
+                                    maxlength="255" autocomplete="current-password">
+                            </div>
+                            <div>
+                                <label class="form-label" for="profile-new-password">Nueva contraseña</label>
+                                <input id="profile-new-password" class="form-control" type="password"
+                                    minlength="8" maxlength="128" autocomplete="new-password">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                            <button id="profile-submit" type="submit" class="btn btn-primary">Guardar cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid px-4">
+            <div id="mensaje" class="alert d-none"></div>
+            <div class="inventory-summary" aria-label="Resumen del inventario">
+                <div class="inventory-stat"><i class="fas fa-box-open" aria-hidden="true"></i><div>Refacciones<strong id="total-refacciones">—</strong><small class="text-muted">registradas</small></div></div>
+                <div class="inventory-stat warning"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><div>Existencia baja<strong id="total-bajas">—</strong><small class="text-muted">por debajo del mínimo</small></div></div>
+                <div class="inventory-stat danger"><i class="fas fa-box" aria-hidden="true"></i><div>Agotadas<strong id="total-agotadas">—</strong><small class="text-muted">sin existencias</small></div></div>
+            </div>
+            <div class="card inventory-card border-0 shadow-sm p-4 mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div><h5 class="mb-1">Existencias</h5><small class="text-muted">Consulta y administra las refacciones registradas.</small></div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaRefaccionModal"><i class="fas fa-plus me-1"></i> Nueva refacción</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#entradaModal"><i class="fas fa-box-open me-1"></i> Reabastecer</button>
+                    </div>
+                </div>
+                <div class="inventory-filters">
+                    <div class="search-field"><i class="fas fa-search" aria-hidden="true"></i><input id="buscarPieza" type="search" class="form-control" placeholder="Buscar por nombre o código..." aria-label="Buscar por nombre o código"></div>
+                    <select id="filtroCategoria" class="form-select" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
+                    <select id="filtroEstado" class="form-select" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option>Disponible</option><option>Existencia baja</option><option>Agotada</option><option>Sin mínimo configurado</option></select>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                    <div class="form-check"><input type="checkbox" id="filtroReabastecer" class="form-check-input"><label for="filtroReabastecer" class="form-check-label">Necesitan reabastecimiento</label></div>
+                    <button id="descargarReabastecimiento" type="button" class="btn btn-outline-success">Descargar lista en Excel</button>
+                </div>
+                <p class="small text-muted">Existencia baja: menor al mínimo. Agotada: cero existencias. Deja el mínimo vacío si aún no está definido.</p>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light"><tr><th>Pieza</th><th>Código</th><th>Categoría</th><th>Existencia</th><th>Mínimo</th><th>Estado</th><th>Acciones</th></tr></thead>
+                        <tbody id="tabla-inventario"><tr><td colspan="7" class="text-muted">Cargando inventario...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card inventory-card border-0 shadow-sm p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                    <div><h5 class="mb-1">Movimientos recientes</h5><small class="text-muted">Últimos registros de entradas y salidas de refacciones.</small></div>
+                    <div class="movement-filters">
+                        <select id="filtroFechaMovimiento" class="form-select" aria-label="Filtrar movimientos por fecha"><option value="">Todas las fechas</option><option value="1">Hoy</option><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option></select>
+                        <select id="filtroTipoMovimiento" class="form-select" aria-label="Filtrar movimientos por tipo"><option value="">Todos los tipos</option><option>Entrada</option><option>Salida</option></select>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light"><tr><th>Fecha</th><th>Pieza</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th></tr></thead>
+                        <tbody id="tabla-movimientos"><tr><td colspan="5" class="text-muted">Cargando movimientos...</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                    <small id="movimientos-rango" class="text-muted" role="status"></small>
+                    <nav aria-label="Páginas de movimientos"><div id="movimientos-paginas" class="d-flex flex-wrap gap-1"></div></nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="entradaModal" tabindex="-1" aria-labelledby="entradaTitulo" aria-hidden="true">
+        <div class="modal-dialog"><div class="modal-content border-0 shadow-lg">
+            <form id="formEntradaPieza">
+                <div class="modal-header"><h5 id="entradaTitulo" class="modal-title">Reabastecer refacción</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                <div class="modal-body">
+                    <div id="entradaError" class="alert alert-danger d-none" role="alert"></div>
+                    <div class="mb-3"><label for="entradaPieza" class="form-label">Pieza *</label><select id="entradaPieza" class="form-select" required></select></div>
+                    <div class="row g-3">
+                        <div class="col-sm-4"><label for="entradaCantidad" class="form-label">Cantidad *</label><input id="entradaCantidad" type="number" min="1" step="1" class="form-control" value="1" required></div>
+                        <div class="col-sm-8"><label for="entradaMotivo" class="form-label">Motivo (opcional)</label><input id="entradaMotivo" type="text" class="form-control" placeholder="Ej. Compra, reabastecimiento"></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" type="submit">Reabastecer</button></div>
+            </form>
+        </div></div>
+    </div>
+    <div class="modal fade" id="nuevaRefaccionModal" tabindex="-1" aria-labelledby="nuevaRefaccionTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+            <form id="formNuevaRefaccion">
+                <div class="modal-header"><h5 class="modal-title" id="nuevaRefaccionTitulo">Nueva refacción</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                <div class="modal-body">
+                    <div id="nuevaRefaccionError" class="alert alert-danger d-none" role="alert"></div>
+                    <div class="mb-3"><label for="refaccionNombre" class="form-label">Nombre</label><input id="refaccionNombre" class="form-control" maxlength="100" required placeholder="Rodamiento 6205"></div>
+                    <div class="mb-3"><label for="refaccionCodigo" class="form-label">Código único</label><input id="refaccionCodigo" class="form-control" maxlength="50" required placeholder="REF-001"></div>
+                    <div class="mb-3"><label for="refaccionCategoria" class="form-label">Categoría</label><input id="refaccionCategoria" class="form-control" maxlength="50" required value="General"></div>
+                    <p class="text-muted mb-0">Se creará con cero existencias. Usa Reabastecer para registrar las unidades disponibles y su movimiento de entrada.</p>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary">Guardar refacción</button></div>
+            </form>
+        </div></div>
+    </div>
+    <script src="vendor/supabase-2.117.2.js"></script>
+    <script src="config.js"></script>
+    <script src="cloud.js"></script>
+    <script src="auth.js"></script>
+    <script src="vendor/exceljs-4.4.0.min.js"></script>
+    <script src="report-logo.js"></script>
+    <script src="inventory-levels.js"></script>
+    <div class="modal fade" id="minimoModal" tabindex="-1" aria-labelledby="minimoTitulo" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><form id="formMinimo">
+        <div class="modal-header"><h5 id="minimoTitulo" class="modal-title">Configurar mínimo</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+        <div class="modal-body"><p id="minimoNombre"></p><div id="minimoError" class="alert alert-danger d-none" role="alert"></div>
+          <label for="minimoValor" class="form-label">Existencia mínima (opcional)</label><input id="minimoValor" type="number" min="0" max="2147483647" step="1" class="form-control">
+          <small class="text-muted">Dejar vacío elimina el mínimo. Guardar no modifica las existencias.</small></div>
+        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary">Guardar mínimo</button></div>
+      </form></div></div>
+    </div>
+    <script>
+        const API = 'http://localhost:8000';
+        const INVENTARIO_REFRESH_INTERVAL_MS = 60000;
+        let inventarioRefreshInterval = null;
+        let inventarioRefreshInFlight = false;
+        const mensaje = document.getElementById('mensaje');
+        function mostrarMensaje(texto, tipo) {
+            mensaje.textContent = texto;
+            mensaje.className = `alert alert-${tipo}`;
+        }
+        let inventarioPiezas = [];
+        let minimoPieza = null;
+        function renderInventario() {
+            const soloFaltantes = document.getElementById('filtroReabastecer').checked;
+            const normalizar = valor => String(valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const busqueda = normalizar(document.getElementById('buscarPieza').value.trim());
+            const categoria = document.getElementById('filtroCategoria').value;
+            const estadoFiltro = document.getElementById('filtroEstado').value;
+            document.getElementById('total-refacciones').textContent = inventarioPiezas.length;
+            document.getElementById('total-bajas').textContent = inventarioPiezas.filter(p => InventoryLevels.status(p).label === 'Existencia baja').length;
+            document.getElementById('total-agotadas').textContent = inventarioPiezas.filter(p => InventoryLevels.status(p).label === 'Agotada').length;
+            const piezas = inventarioPiezas.filter(p => {
+                const estado = InventoryLevels.status(p);
+                return (!soloFaltantes || estado.replenish) && (!categoria || p.categoria === categoria)
+                    && (!estadoFiltro || estado.label === estadoFiltro)
+                    && (!busqueda || normalizar(p.nombre).includes(busqueda) || normalizar(p.codigo).includes(busqueda));
+            });
+            document.getElementById('tabla-inventario').innerHTML = piezas.map(p => {
+                const estado = InventoryLevels.status(p);
+                return `<tr><td>${escapeHtml(p.nombre)}</td><td>${escapeHtml(p.codigo)}</td><td>${escapeHtml(p.categoria)}</td><td>${escapeHtml(p.stock)}</td><td>${p.stock_minimo == null ? 'Sin definir' : escapeHtml(p.stock_minimo)}</td><td><span class="badge ${estado.color}">${estado.label}</span></td><td><button type="button" class="btn btn-sm btn-outline-primary" data-minimo="${escapeHtml(p.id_pieza)}" ${!window.CampoterraCloud.enabled ? 'disabled' : ''}>Configurar mínimo</button></td></tr>`;
+            }).join('') || '<tr><td colspan="7" class="text-muted">No hay refacciones para mostrar.</td></tr>';
+        }
+        document.getElementById('buscarPieza').addEventListener('input', renderInventario);
+        ['filtroCategoria', 'filtroEstado'].forEach(id => document.getElementById(id).addEventListener('change', renderInventario));
+        document.getElementById('filtroReabastecer').addEventListener('change', renderInventario);
+        document.getElementById('tabla-inventario').addEventListener('click', event => {
+            const button = event.target.closest('[data-minimo]');
+            if (!button) return;
+            minimoPieza = inventarioPiezas.find(p => String(p.id_pieza) === button.dataset.minimo);
+            document.getElementById('minimoNombre').textContent = minimoPieza.nombre;
+            document.getElementById('minimoValor').value = minimoPieza.stock_minimo ?? '';
+            document.getElementById('minimoError').classList.add('d-none');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('minimoModal')).show();
+        });
+        document.getElementById('formMinimo').addEventListener('submit', async event => {
+            event.preventDefault();
+            const button = event.target.querySelector('[type="submit"]');
+            if (button.disabled) return;
+            button.disabled = true;
+            try {
+                const value = document.getElementById('minimoValor').value.trim();
+                const minimo = value === '' ? null : Number(value);
+                if (minimo !== null && (!Number.isInteger(minimo) || minimo < 0 || minimo > 2147483647)) throw new Error('Introduce un número entero igual o mayor que cero.');
+                const response = await authenticatedFetch(`${API}/api/piezas/${minimoPieza.id_pieza}/minimo`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stock_minimo: minimo }) });
+                const result = await response.json();
+                if (!response.ok) throw new Error((result.detail || '').includes('schema cache') ? 'Falta instalar la actualización de mínimos en Supabase.' : result.detail || 'No se pudo guardar el mínimo.');
+                minimoPieza.stock_minimo = result.stock_minimo;
+                renderInventario();
+                bootstrap.Modal.getInstance(document.getElementById('minimoModal')).hide();
+                mostrarMensaje('Mínimo guardado correctamente.', 'success');
+                await actualizarInventario();
+            } catch (error) {
+                const box = document.getElementById('minimoError'); box.textContent = error.message; box.classList.remove('d-none');
+            } finally { button.disabled = false; }
+        });
+        document.getElementById('descargarReabastecimiento').addEventListener('click', async event => {
+            const button = event.currentTarget; if (button.disabled) return; button.disabled = true;
+            try { await InventoryLevels.download(inventarioPiezas); }
+            catch (error) { mostrarMensaje(error.message, 'warning'); }
+            finally { button.disabled = false; }
+        });
+        async function cargarInventario() {
+            const respuesta = await authenticatedFetch(`${API}/api/piezas/`);
+            if (!respuesta.ok) throw new Error('No se pudo cargar el inventario.');
+            const piezas = await respuesta.json();
+            if (!Array.isArray(piezas)) throw new Error('El inventario recibido no es válido.');
+            inventarioPiezas = piezas;
+            const categorias = document.getElementById('filtroCategoria');
+            const categoriaAnterior = categorias.value;
+            categorias.innerHTML = '<option value="">Todas las categorías</option>' + [...new Set(piezas.map(p => p.categoria).filter(Boolean))]
+                .sort((a,b) => a.localeCompare(b, 'es')).map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            if ([...categorias.options].some(o => o.value === categoriaAnterior)) categorias.value = categoriaAnterior;
+            renderInventario();
+            const selector = document.getElementById('entradaPieza');
+            const selected = selector.value;
+            selector.innerHTML = '<option value="">Seleccionar pieza...</option>';
+            piezas.forEach(pieza => {
+                selector.innerHTML += `<option value="${escapeHtml(pieza.id_pieza)}">${escapeHtml(pieza.nombre)} (${escapeHtml(pieza.stock)})</option>`;
+            });
+            selector.value = selected;
+            return true;
+        }
+        let movimientosInventario = [];
+        let paginaMovimientos = 1;
+        const MOVIMIENTOS_POR_PAGINA = 10;
+        function renderMovimientos() {
+            const tipo = document.getElementById('filtroTipoMovimiento').value;
+            const dias = Number(document.getElementById('filtroFechaMovimiento').value);
+            const desde = new Date(); desde.setHours(0,0,0,0); desde.setDate(desde.getDate() - Math.max(0, dias - 1));
+            const hasta = new Date(); hasta.setHours(24,0,0,0);
+            const filtrados = movimientosInventario.filter(m => (!tipo || m.tipo === tipo)
+                && (!dias || (new Date(m.fecha_movimiento) >= desde && new Date(m.fecha_movimiento) < hasta)));
+            const total = filtrados.length;
+            const paginas = Math.max(1, Math.ceil(total / MOVIMIENTOS_POR_PAGINA));
+            paginaMovimientos = Math.max(1, Math.min(paginaMovimientos, paginas));
+            const inicio = (paginaMovimientos - 1) * MOVIMIENTOS_POR_PAGINA;
+            document.getElementById('tabla-movimientos').innerHTML = filtrados
+                .slice(inicio, inicio + MOVIMIENTOS_POR_PAGINA).map(movimiento => {
+                    const color = movimiento.tipo === 'Entrada' ? 'bg-success' : 'bg-danger';
+                    return `<tr><td>${new Date(movimiento.fecha_movimiento).toLocaleString('es-MX')}</td><td>${escapeHtml(movimiento.nombre_pieza)}</td><td><span class="badge ${color}">${escapeHtml(movimiento.tipo)}</span></td><td>${escapeHtml(movimiento.cantidad)}</td><td>${escapeHtml(movimiento.motivo)}</td></tr>`;
+                }).join('') || '<tr><td colspan="5" class="text-muted">No hay movimientos para los filtros seleccionados.</td></tr>';
+            document.getElementById('movimientos-rango').textContent = total
+                ? `Mostrando ${inicio + 1}–${Math.min(inicio + MOVIMIENTOS_POR_PAGINA, total)} de ${total} movimientos`
+                : '0 movimientos';
+            const boton = (pagina, texto, disabled = false) => `<button type="button" class="btn btn-sm ${pagina === paginaMovimientos && !disabled ? 'btn-primary' : 'btn-outline-primary'}" data-pagina="${pagina}" ${disabled ? 'disabled' : ''} ${pagina === paginaMovimientos && !disabled ? 'aria-current="page"' : ''}>${texto}</button>`;
+            let controles = boton(paginaMovimientos - 1, '‹ Anterior', paginaMovimientos === 1);
+            const visibles = [...new Set([1, paginaMovimientos - 1, paginaMovimientos, paginaMovimientos + 1, paginas])]
+                .filter(n => n >= 1 && n <= paginas).sort((a, b) => a - b);
+            visibles.forEach((pagina, index) => {
+                if (index && pagina - visibles[index - 1] > 1) controles += '<span class="align-self-center px-1" aria-hidden="true">…</span>';
+                controles += boton(pagina, String(pagina));
+            });
+            controles += boton(paginaMovimientos + 1, 'Siguiente ›', paginaMovimientos === paginas);
+            document.getElementById('movimientos-paginas').innerHTML = total ? controles : '';
+        }
+        ['filtroFechaMovimiento', 'filtroTipoMovimiento'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+            paginaMovimientos = 1; renderMovimientos();
+        }));
+        document.getElementById('movimientos-paginas').addEventListener('click', event => {
+            const boton = event.target.closest('[data-pagina]');
+            if (!boton || boton.disabled) return;
+            const pagina = Number(boton.dataset.pagina);
+            paginaMovimientos = pagina;
+            renderMovimientos();
+            document.querySelector(`#movimientos-paginas [data-pagina="${pagina}"][aria-current]`)?.focus({ preventScroll: true });
+        });
+        async function cargarMovimientos() {
+            const respuesta = await authenticatedFetch(`${API}/api/inventario/movimientos`);
+            if (!respuesta.ok) throw new Error('No se pudo cargar el historial.');
+            const movimientos = await respuesta.json();
+            if (!Array.isArray(movimientos)) throw new Error('El historial recibido no es válido.');
+            movimientosInventario = movimientos;
+            renderMovimientos();
+            return true;
+        }
+        function actualizarEstadoInventario(mensajeEstado, clase = 'text-muted') {
+            const estado = document.getElementById('inventario-sync-status');
+            estado.className = `small ${clase}`;
+            estado.textContent = mensajeEstado;
+        }
+        function registrarActualizacionInventario() {
+            document.getElementById('inventario-last-update').textContent =
+                `Última actualización: ${new Date().toLocaleTimeString('es-MX')}`;
+        }
+        async function actualizarInventario() {
+            if (inventarioRefreshInFlight) return;
+            inventarioRefreshInFlight = true;
+            actualizarEstadoInventario('Sincronizando...', 'text-primary');
+            document.getElementById('btnActualizarInventario').disabled = true;
+            try {
+                const resultados = await Promise.allSettled([cargarInventario(), cargarMovimientos()]);
+                if (resultados.every(resultado => resultado.status === 'fulfilled')) {
+                    registrarActualizacionInventario();
+                    actualizarEstadoInventario('Sincronizado', 'text-success');
+                } else {
+                    console.error('No se pudo actualizar todo el inventario.', resultados);
+                    actualizarEstadoInventario('No se pudo actualizar todo; se conservan los datos disponibles.', 'text-warning');
+                }
+            } finally {
+                inventarioRefreshInFlight = false;
+                document.getElementById('btnActualizarInventario').disabled = false;
+            }
+        }
+        document.getElementById('formNuevaRefaccion').addEventListener('submit', async event => {
+            event.preventDefault();
+            const form = event.target;
+            const button = form.querySelector('button[type="submit"]');
+            const errorBox = document.getElementById('nuevaRefaccionError');
+            if (button.disabled) return;
+            button.disabled = true;
+            errorBox.classList.add('d-none');
+            try {
+                const nombre = document.getElementById('refaccionNombre').value.trim();
+                const codigo = document.getElementById('refaccionCodigo').value.trim();
+                const categoria = document.getElementById('refaccionCategoria').value.trim();
+                if (!nombre || !codigo || !categoria) throw new Error('Completa nombre, código y categoría.');
+                const response = await authenticatedFetch(`${API}/api/piezas/`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre, codigo, categoria, stock: 0, icon: 'cog-outline' })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'No se pudo guardar. Revisa el inventario antes de reintentar.');
+                form.reset();
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('nuevaRefaccionModal')).hide();
+                mostrarMensaje('Refacción creada. Usa Reabastecer para registrar sus existencias.', 'success');
+                try {
+                    await cargarInventario();
+                    document.getElementById('entradaPieza').value = String(data.id_pieza);
+                } catch { mostrarMensaje('Refacción creada, pero no se pudo actualizar la lista. Pulsa Actualizar ahora.', 'warning'); }
+            } catch (error) {
+                errorBox.textContent = error.message;
+                errorBox.classList.remove('d-none');
+            } finally { button.disabled = false; }
+        });
+        document.getElementById('entradaModal').addEventListener('show.bs.modal', () => document.getElementById('entradaError').classList.add('d-none'));
+        document.getElementById('formEntradaPieza').addEventListener('submit', async event => {
+            event.preventDefault();
+            const button = event.target.querySelector('button[type="submit"]');
+            if (button.disabled) return;
+            button.disabled = true;
+            try {
+                const respuesta = await authenticatedFetch(`${API}/api/piezas/${document.getElementById('entradaPieza').value}/entradas`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        cantidad: Number(document.getElementById('entradaCantidad').value),
+                        motivo: document.getElementById('entradaMotivo').value || 'Reabastecimiento'
+                    })
+                });
+                const datos = await respuesta.json();
+                if (!respuesta.ok) throw new Error(datos.detail || 'No se pudo registrar la entrada.');
+                event.target.reset();
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('entradaModal')).hide();
+                mostrarMensaje('Entrada registrada correctamente.', 'success');
+                await actualizarInventario();
+            } catch (error) {
+                const box = document.getElementById('entradaError'); box.textContent = error.message; box.classList.remove('d-none');
+            }
+            finally { button.disabled = false; }
+        });
+        document.getElementById('btnActualizarInventario').addEventListener('click', actualizarInventario);
+        actualizarInventario().catch(error => {
+            console.error('Error al actualizar inventario:', error);
+            actualizarEstadoInventario('Error de sincronización.', 'text-danger');
+        });
+        if (!inventarioRefreshInterval) {
+            inventarioRefreshInterval = window.setInterval(actualizarInventario, INVENTARIO_REFRESH_INTERVAL_MS);
+        }
+
+        const PROFILE_URL = 'http://localhost:8000/api/mi-perfil';
+
+        function mostrarPerfil(perfil) {
+            document.getElementById('profile-name').textContent = perfil.nombre;
+            document.getElementById('profile-role').textContent = perfil.cargo;
+            document.getElementById('profile-avatar').src =
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(perfil.nombre)}&background=0D8ABC&color=fff`;
+            document.getElementById('profile-name-input').value = perfil.nombre;
+            document.getElementById('profile-role-input').value = perfil.cargo;
+        }
+
+        function mostrarAlertaPerfil(mensaje, tipo = 'danger') {
+            const alerta = document.getElementById('profile-alert');
+            alerta.className = `alert alert-${tipo}`;
+            alerta.textContent = mensaje;
+        }
+
+        async function cargarPerfil() {
+            try {
+                const respuesta = await authenticatedFetch(PROFILE_URL);
+                if (!respuesta.ok) throw new Error('No se pudo cargar el perfil.');
+                mostrarPerfil(await respuesta.json());
+            } catch (error) {
+                console.error('Error al cargar el perfil:', error);
+            }
+        }
+
+        async function guardarPerfil(event) {
+            event.preventDefault();
+            const boton = document.getElementById('profile-submit');
+            const nuevaContrasena = document.getElementById('profile-new-password').value;
+            const contrasenaActual = document.getElementById('profile-current-password').value;
+            const alerta = document.getElementById('profile-alert');
+            alerta.className = 'alert d-none';
+            boton.disabled = true;
+            try {
+                const respuesta = await authenticatedFetch(PROFILE_URL, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nombre: document.getElementById('profile-name-input').value.trim(),
+                        cargo: document.getElementById('profile-role-input').value.trim(),
+                        contrasena_actual: contrasenaActual || null,
+                        nueva_contrasena: nuevaContrasena || null
+                    })
+                });
+                const datos = await respuesta.json();
+                if (!respuesta.ok) throw new Error(datos.detail || 'No se pudo actualizar el perfil.');
+                mostrarPerfil(datos);
+                document.getElementById('profile-current-password').value = '';
+                document.getElementById('profile-new-password').value = '';
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('profile-modal')).hide();
+            } catch (error) {
+                mostrarAlertaPerfil(error.message);
+            } finally {
+                boton.disabled = false;
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', guardarPerfil);
+        document.getElementById('profile-modal').addEventListener('show.bs.modal', () => {
+            document.getElementById('profile-alert').className = 'alert d-none';
+        });
+        cargarPerfil();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campoterra CMMS | Dashboard</title>
+    <!-- Importamos Bootstrap 5 para el diseño profesional -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Importamos FontAwesome para los íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* --- ESTILOS DEL MENÚ LATERAL (SIDEBAR) --- */
+        .sidebar {
+            height: 100vh;
+            width: 260px;
+            background-color: #0b1528; /* Azul corporativo muy oscuro */
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding-top: 20px;
+            color: white;
+            z-index: 1000;
+        }
+        .sidebar-brand {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+        }
+        .sidebar-brand i { font-size: 1.8rem; margin-right: 10px; }
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 15px;
+            color: #a0aabf;
+            display: block;
+            transition: 0.3s;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            color: white;
+            background-color: #1a2639;
+            border-left: 4px solid #3498db;
+        }
+        .sidebar a i { margin-right: 15px; width: 20px; text-align: center; }
+
+        /* --- ESTILOS DEL ÁREA PRINCIPAL --- */
+        .main-content {
+            margin-left: 260px; /* Dejamos espacio para el sidebar */
+            padding-bottom: 40px;
+        }
+        
+        /* --- ESTILOS DE LA BARRA SUPERIOR (TOPBAR) --- */
+        .topbar {
+            background-color: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .search-bar {
+            background-color: #f0f2f5;
+            border-radius: 20px;
+            padding: 8px 20px;
+            width: 350px;
+            display: flex;
+            align-items: center;
+        }
+        .search-bar input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            margin-left: 10px;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .notification-wrapper {
+            position: relative;
+        }
+        .notification-button {
+            border: 0;
+            background: transparent;
+            color: #555;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+        .notification-panel {
+            position: absolute;
+            right: 0;
+            top: 42px;
+            width: 360px;
+            max-height: 420px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #e7eaf0;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12);
+            z-index: 1100;
+            display: none;
+        }
+        .notification-panel.show {
+            display: block;
+        }
+        .notification-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eef0f3;
+        }
+        .notification-item {
+            display: block;
+            width: 100%;
+            border: 0;
+            border-bottom: 1px solid #f0f1f3;
+            background: #fff;
+            padding: 12px 15px;
+            text-align: left;
+            cursor: pointer;
+        }
+        .notification-item:hover, .notification-item.unread {
+            background: #f4f8fb;
+        }
+        .notification-item-title {
+            color: #1d2939;
+            font-weight: 600;
+            font-size: .9rem;
+        }
+        .notification-item-message, .notification-item-date {
+            color: #667085;
+            font-size: .8rem;
+        }
+        .notification-empty {
+            color: #667085;
+            padding: 22px 15px;
+            text-align: center;
+            font-size: .9rem;
+        }
+        .user-profile img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .profile-trigger {
+            border: 0;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0;
+            text-align: left;
+            cursor: pointer;
+        }
+        .profile-trigger:hover strong { color: #0d6efd; }
+        .sync-status {
+            min-width: 220px;
+        }
+    </style>
+    <link rel="stylesheet" href="responsive.css">
+    <script src="responsive.js" defer></script>
+</head>
+<body>
+
+    <!-- MENÚ LATERAL (SIDEBAR) -->
+    <div class="sidebar">
+      <div class="sidebar-brand" style="line-height: 1.2;">
+    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 5px;">
+        <img src="logo.png" alt="Logo Campoterra" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid #3498db;">
+        <span>CAMPOTERRA</span>
+    </div>
+    <small style="font-size: 12px; font-weight: normal; color: #a0aabf; display: block;">CONGELADORA</small>
+</div>
+        <a href="#" class="active"><i class="fas fa-home"></i> Panel de Inicio</a>
+        <a href="bitacoras.html"><i class="fas fa-clipboard-list"></i> Historial de Bitácoras</a>
+        <a href="maquinaria.html"><i class="fas fa-box"></i> Catálogo de Maquinaria</a>
+        <a href="areas.html"><i class="fas fa-location-dot"></i> Áreas de Mantenimiento</a>
+        <a href="personal.html"><i class="fas fa-users"></i> Control de Personal</a>
+        <a href="inventario.html"><i class="fas fa-boxes-stacked"></i> Inventario</a>
+        <a href="evaluaciones.html"><i class="fas fa-clipboard-check"></i> Evaluaciones</a>
+        <a href="reportes.html"><i class="fas fa-file-alt"></i> Reportes y Descargas</a>
+        
+        <div style="position: absolute; bottom: 20px; width: 100%;">
+            <a href="login.html"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
+        </div>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        
+        <!-- BARRA SUPERIOR (TOPBAR) -->
+        <div class="topbar">
+            <div class="search-bar">
+                <i class="fas fa-search" style="color: #888;"></i>
+                <input type="text" id="inputBusqueda" placeholder="Buscar máquina, técnico o actividad...">
+            </div>
+            
+            
+            <div class="user-profile">
+                <div class="sync-status text-end">
+                    <div id="dashboard-sync-status" class="small text-muted" role="status">Sincronización pendiente</div>
+                    <small id="dashboard-last-update" class="text-muted">Última actualización: pendiente</small>
+                </div>
+                <button id="btnActualizarDashboard" class="btn btn-outline-primary btn-sm" type="button">
+                    <i class="fas fa-sync-alt me-1"></i> Actualizar ahora
+                </button>
+                <div class="notification-wrapper">
+                    <button id="notification-button" class="notification-button" type="button"
+                        aria-label="Ver notificaciones" aria-expanded="false">
+                        <i class="fas fa-bell" style="font-size: 1.2rem; position: relative;">
+                            <span id="notification-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                style="font-size: 0.6rem; display: none;">0</span>
+                        </i>
+                    </button>
+                    <div id="notification-panel" class="notification-panel" role="region"
+                        aria-label="Notificaciones">
+                        <div class="notification-panel-header">
+                            <strong>Notificaciones</strong>
+                            <button id="mark-all-notifications" class="btn btn-sm btn-link p-0" type="button">
+                                Marcar todas como leídas
+                            </button>
+                        </div>
+                        <div id="notification-list"></div>
+                    </div>
+                </div>
+                <button id="profile-trigger" class="profile-trigger" type="button"
+                    data-bs-toggle="modal" data-bs-target="#profile-modal" aria-label="Editar perfil">
+                    <img id="profile-avatar"
+                        src="https://ui-avatars.com/api/?&background=0D8ABC&color=fff"
+                        alt="Perfil">
+                    <span style="line-height: 1.2;">
+                        <strong id="profile-name">Cargando perfil…</strong><br>
+                        <small id="profile-role" style="color: #888;"> </small>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TARJETAS DE INDICADORES (KPIs) -->
+        <div class="container-fluid px-4 mb-4">
+            <div class="row g-3">
+                
+                <!-- Tarjeta 1: Mantenimientos Hoy -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100 p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1" style="font-size: 12px; font-weight: bold;">REPORTES DE HOY</h6>
+                                <h3 class="mb-0 fw-bold" id="kpi-hoy">—</h3>
+                                <small class="text-muted">Reportes registrados hoy</small>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                                <i class="fas fa-chart-line fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tarjeta 2: Alertas Críticas -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100 p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1" style="font-size: 12px; font-weight: bold;">CORRECTIVOS DE HOY</h6>
+                                <h3 class="mb-0 fw-bold text-danger" id="kpi-alertas">—</h3>
+                                <small class="text-muted">Correctivos registrados hoy</small>
+                            </div>
+                            <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger">
+                                <i class="fas fa-exclamation-triangle fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 3: Preventivos -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100 p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1" style="font-size: 12px; font-weight: bold;">PREVENTIVOS DE HOY</h6>
+                                <h3 class="mb-0 fw-bold text-success" id="kpi-preventivos">—</h3>
+                                <small class="text-muted">Porcentaje de bitácoras preventivas hoy</small>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success">
+                                <i class="fas fa-shield-alt fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <!-- RESUMEN SEMANAL: domingo a sábado -->
+        <div class="container-fluid px-4 mb-4">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                    <div>
+                        <h5 class="mb-1 text-secondary"><strong>RESUMEN SEMANAL</strong></h5>
+                        <small class="text-muted" id="semana-periodo">Cargando periodo...</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="selectorSemana" class="small text-muted">Semana</label>
+                        <input id="selectorSemana" type="number" min="1" max="53" class="form-control" style="width: 90px;">
+                        <label for="selectorAnio" class="small text-muted">Año</label>
+                        <input id="selectorAnio" type="number" min="2000" max="2100" class="form-control" style="width: 105px;">
+                        <button id="btnSemanaActual" type="button" class="btn btn-outline-primary">Esta semana</button>
+                        <button id="btnCargarSemana" class="btn btn-primary">
+                            <i class="fas fa-calendar-week me-1"></i> Consultar
+                        </button>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4"><div class="bg-light rounded p-3"><small class="text-muted">TOTAL DE BITÁCORAS</small><h3 id="semana-total" class="mb-0">0</h3></div></div>
+                    <div class="col-md-4"><div class="bg-light rounded p-3"><small class="text-muted">PREVENTIVOS</small><h3 id="semana-preventivos" class="mb-0 text-success">0</h3></div></div>
+                    <div class="col-md-4"><div class="bg-light rounded p-3"><small class="text-muted">CORRECTIVOS</small><h3 id="semana-correctivos" class="mb-0 text-danger">0</h3></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE GRÁFICAS -->
+        <div class="container-fluid px-4 mb-4">
+            <div class="row g-3">
+                
+                <!-- Gráfica de Dona (Izquierda) -->
+                <div class="col-md-5">
+                    <div class="card border-0 shadow-sm h-100 p-3">
+                        <h6 class="text-muted mb-3" style="font-size: 12px; font-weight: bold;">DISTRIBUCIÓN DE TRABAJO</h6>
+                        <div style="position: relative; height: 250px; width: 100%;">
+                            <canvas id="graficaDona"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Gráfica de Barras (Derecha) -->
+                <div class="col-md-7">
+                    <div class="card border-0 shadow-sm h-100 p-3">
+                        <h6 class="text-muted mb-1" style="font-size: 12px; font-weight: bold;">REPORTES POR ÁREA</h6>
+                        <small class="d-block text-muted mb-3" id="incidencias-area-periodo">Área de la semana seleccionada</small>
+                        <div id="graficaBarras-contenedor" style="position: relative; height: 250px; width: 100%;">
+                            <canvas id="graficaBarras"></canvas>
+                        </div>
+                        <div id="graficaBarras-vacia" class="text-muted text-center d-none align-items-center justify-content-center" style="height: 250px;" role="status">
+                            No hay reportes registrados en esta semana.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- CONTENEDOR DE LA TABLA -->
+        <div class="container-fluid px-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h5 class="mb-1 text-secondary"><strong>REPORTES DE LA SEMANA</strong></h5>
+                    <small class="text-muted" id="actividades-periodo">Semana actual: cargando periodo...</small>
+                </div>
+                <button id="btnExportar" class="btn btn-outline-success">
+                    <i class="fas fa-file-excel me-2"></i> Exportar Reporte
+                </button>
+            </div>
+            
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <!-- Usamos clases de Bootstrap para la tabla -->
+                    <table class="table table-hover mb-0" id="tabla-bitacoras">
+                        <thead class="table-light">
+                            <tr>
+                                <th>FECHA / HORA</th>
+                                <th>EQUIPO</th>
+                                <th>RESPONSABLE</th>
+                                <th>TIPO</th>
+                                <th>ACTIVIDAD REALIZADA</th>
+                                <th>REPUESTOS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Los datos se inyectarán aquí por JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal fade" id="profile-modal" tabindex="-1" aria-labelledby="profile-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <form id="profile-form">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="profile-modal-title">
+                            <i class="fas fa-user-pen text-primary me-2"></i>Editar perfil
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="profile-alert" class="alert d-none" role="alert"></div>
+                        <div class="mb-3">
+                            <label class="form-label" for="profile-name-input">Nombre</label>
+                            <input id="profile-name-input" class="form-control" type="text"
+                                minlength="2" maxlength="100" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="profile-role-input">Cargo</label>
+                            <input id="profile-role-input" class="form-control" type="text"
+                                minlength="2" maxlength="100" required>
+                        </div>
+                        <hr>
+                        <p class="small text-muted mb-3">Deja estos campos vacíos si no deseas cambiar la contraseña.</p>
+                        <div class="mb-3">
+                            <label class="form-label" for="profile-current-password">Contraseña actual</label>
+                            <input id="profile-current-password" class="form-control" type="password"
+                                maxlength="255" autocomplete="current-password">
+                        </div>
+                        <div>
+                            <label class="form-label" for="profile-new-password">Nueva contraseña</label>
+                            <input id="profile-new-password" class="form-control" type="password"
+                                minlength="8" maxlength="128" autocomplete="new-password">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button id="profile-submit" type="submit" class="btn btn-primary">Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+  <script src="vendor/supabase-2.117.2.js"></script>
+    <script src="config.js"></script>
+    <script src="cloud.js"></script>
+    <script src="auth.js"></script>
+    <script>
+      const NOTIFICATIONS_URL = 'http://localhost:8000/api/notificaciones';
+      const PROFILE_URL = 'http://localhost:8000/api/mi-perfil';
+      const DASHBOARD_REFRESH_INTERVAL_MS = 60000;
+      let dashboardRefreshInterval = null;
+      let dashboardRefreshInFlight = false;
+      let actividadesExportables = [];
+
+
+      function mostrarPerfil(perfil) {
+          document.getElementById('profile-name').textContent = perfil.nombre;
+          document.getElementById('profile-role').textContent = perfil.cargo;
+          document.getElementById('profile-avatar').src =
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(perfil.nombre)}&background=0D8ABC&color=fff`;
+          document.getElementById('profile-name-input').value = perfil.nombre;
+          document.getElementById('profile-role-input').value = perfil.cargo;
+      }
+
+      function mostrarAlertaPerfil(mensaje, tipo = 'danger') {
+          const alerta = document.getElementById('profile-alert');
+          alerta.className = `alert alert-${tipo}`;
+          alerta.textContent = mensaje;
+      }
+
+      async function cargarPerfil() {
+          try {
+              const respuesta = await authenticatedFetch(PROFILE_URL);
+              if (!respuesta.ok) throw new Error('No se pudo cargar el perfil.');
+              mostrarPerfil(await respuesta.json());
+          } catch (error) {
+              console.error('Error al cargar el perfil:', error);
+          }
+      }
+
+      async function guardarPerfil(event) {
+          event.preventDefault();
+          const boton = document.getElementById('profile-submit');
+          const nuevaContrasena = document.getElementById('profile-new-password').value;
+          const contrasenaActual = document.getElementById('profile-current-password').value;
+          const alerta = document.getElementById('profile-alert');
+          alerta.className = 'alert d-none';
+          boton.disabled = true;
+          try {
+              const respuesta = await authenticatedFetch(PROFILE_URL, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      nombre: document.getElementById('profile-name-input').value.trim(),
+                      cargo: document.getElementById('profile-role-input').value.trim(),
+                      contrasena_actual: contrasenaActual || null,
+                      nueva_contrasena: nuevaContrasena || null
+                  })
+              });
+              const datos = await respuesta.json();
+              if (!respuesta.ok) throw new Error(datos.detail || 'No se pudo actualizar el perfil.');
+              mostrarPerfil(datos);
+              document.getElementById('profile-current-password').value = '';
+              document.getElementById('profile-new-password').value = '';
+              bootstrap.Modal.getOrCreateInstance(document.getElementById('profile-modal')).hide();
+          } catch (error) {
+              mostrarAlertaPerfil(error.message);
+          } finally {
+              boton.disabled = false;
+          }
+      }
+
+      function mostrarNotificaciones(notificaciones) {
+          const lista = document.getElementById('notification-list');
+          lista.innerHTML = '';
+          if (!notificaciones.length) {
+              const vacio = document.createElement('div');
+              vacio.className = 'notification-empty';
+              vacio.textContent = 'No hay notificaciones nuevas';
+              lista.appendChild(vacio);
+              return;
+          }
+          notificaciones.forEach(notificacion => {
+              const item = document.createElement('button');
+              item.type = 'button';
+              item.className = `notification-item${notificacion.leida ? '' : ' unread'}`;
+              const titulo = document.createElement('div');
+              titulo.className = 'notification-item-title';
+              titulo.textContent = notificacion.titulo;
+              const mensaje = document.createElement('div');
+              mensaje.className = 'notification-item-message';
+              mensaje.textContent = notificacion.mensaje;
+              const fecha = document.createElement('div');
+              fecha.className = 'notification-item-date mt-1';
+              fecha.textContent = `${new Date(notificacion.fecha).toLocaleString('es-MX')} · ${notificacion.leida ? 'Leída' : 'Nueva'}`;
+              item.append(titulo, mensaje, fecha);
+              item.addEventListener('click', async () => {
+                  if (!notificacion.leida) {
+                      const respuesta = await authenticatedFetch(
+                          `${NOTIFICATIONS_URL}/${notificacion.id_notificacion}/leer`,
+                          { method: 'POST' }
+                      );
+                      if (!respuesta.ok) return;
+                  }
+                  if (['bitacoras.html', 'dashboard.html', 'reportes.html', 'inventario.html'].includes(notificacion.enlace)) window.location.href = notificacion.enlace;
+                  else await cargarNotificaciones();
+              });
+              lista.appendChild(item);
+          });
+      }
+
+      async function cargarNotificaciones() {
+          try {
+              const respuesta = await authenticatedFetch(`${NOTIFICATIONS_URL}?limite=50`);
+              if (!respuesta.ok) throw new Error('No se pudieron cargar las notificaciones.');
+              const datos = await respuesta.json();
+              const contador = document.getElementById('notification-count');
+              contador.textContent = datos.no_leidas;
+              contador.style.display = datos.no_leidas ? 'inline-block' : 'none';
+              mostrarNotificaciones(datos.notificaciones);
+          } catch (error) {
+              console.error('Error al cargar notificaciones:', error);
+          }
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+          document.getElementById('profile-form').addEventListener('submit', guardarPerfil);
+          document.getElementById('profile-modal').addEventListener('show.bs.modal', () => {
+              document.getElementById('profile-alert').className = 'alert d-none';
+          });
+          cargarPerfil();
+          const boton = document.getElementById('notification-button');
+          const panel = document.getElementById('notification-panel');
+          boton.addEventListener('click', () => {
+              const visible = panel.classList.toggle('show');
+              boton.setAttribute('aria-expanded', visible ? 'true' : 'false');
+              if (visible) cargarNotificaciones();
+          });
+          document.getElementById('mark-all-notifications').addEventListener('click', async () => {
+              const respuesta = await authenticatedFetch(`${NOTIFICATIONS_URL}/leer-todas`, { method: 'POST' });
+              if (respuesta.ok) cargarNotificaciones();
+          });
+          cargarNotificaciones();
+          window.setInterval(cargarNotificaciones, 45000);
+      });
+
+     async function cargarDatosDashboard() {
+            try {
+                const year = document.getElementById('selectorAnio').value;
+                const week = document.getElementById('selectorSemana').value;
+                const [respuestaStats, respuestaSemana] = await Promise.all([
+                    authenticatedFetch('http://localhost:8000/api/dashboard/stats'),
+                    authenticatedFetch(`http://localhost:8000/api/dashboard/weekly?year=${year}&week=${week}`)
+                ]);
+                if (!respuestaStats.ok || !respuestaSemana.ok) {
+                    throw new Error('No se pudieron cargar los datos del dashboard.');
+                }
+                const stats = await respuestaStats.json();
+                const semana = await respuestaSemana.json();
+                if (!Array.isArray(semana.bitacoras)) {
+                    throw new Error('La respuesta semanal no contiene una lista válida de bitácoras.');
+                }
+
+                document.getElementById('kpi-hoy').innerText = stats.completados_hoy;
+                document.getElementById('kpi-alertas').innerText = stats.alertas_criticas;
+                document.getElementById('kpi-preventivos').innerText = Number(stats.completados_hoy) > 0 ? stats.preventivos + '%' : 'Sin reportes';
+
+                actualizarDistribucionTrabajo(semana);
+
+                const conteoAreas = Object.create(null);
+                semana.bitacoras.forEach(bitacora => {
+                    const etiqueta = (bitacora.nombre_area || '').trim() || 'Área no disponible';
+                    conteoAreas[etiqueta] = (conteoAreas[etiqueta] || 0) + 1;
+                });
+                const areasOrdenadas = Object.entries(conteoAreas)
+                    .sort(([nombreA, cantidadA], [nombreB, cantidadB]) =>
+                        cantidadB - cantidadA || nombreA.localeCompare(nombreB, 'es')
+                    );
+                const sinIncidencias = semana.bitacoras.length === 0;
+                document.getElementById('graficaBarras-contenedor').classList.toggle('d-none', sinIncidencias);
+                document.getElementById('graficaBarras-vacia').classList.toggle('d-none', !sinIncidencias);
+                document.getElementById('graficaBarras-vacia').classList.toggle('d-flex', sinIncidencias);
+                document.getElementById('incidencias-area-periodo').innerText =
+                    `Área de la semana ${semana.week} de ${semana.year}`;
+
+                const ctxBarras = document.getElementById('graficaBarras').getContext('2d');
+                if (window.miGraficaBarras) window.miGraficaBarras.destroy();
+                window.miGraficaBarras = new Chart(ctxBarras, {
+                    type: 'bar',
+                    data: {
+                        labels: areasOrdenadas.map(([nombre]) => nombre),
+                        datasets: [{
+                            label: 'Bitácoras',
+                            data: areasOrdenadas.map(([, cantidad]) => cantidad),
+                            backgroundColor: '#dc3545',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 }
+                            },
+                            y: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+
+                document.getElementById('semana-periodo').innerText =
+                    `Semana ${semana.week} de ${semana.year}: ${formatearFechaPeriodo(semana.inicio)} al ${formatearFechaPeriodo(semana.fin)}`;
+                document.getElementById('semana-total').innerText = semana.total;
+                document.getElementById('semana-preventivos').innerText = semana.preventivos;
+                document.getElementById('semana-correctivos').innerText = semana.correctivos;
+                actualizarActividadesRecientes(semana);
+                return true;
+            } catch (error) {
+                console.error("Error al cargar los datos:", error);
+                return false;
+            }
+        }
+
+        function obtenerSemanaActual() {
+            const ahora = new Date();
+            const inicioAnio = new Date(ahora.getFullYear(), 0, 1);
+            const inicioSemanaUno = new Date(inicioAnio);
+            inicioSemanaUno.setDate(inicioAnio.getDate() - inicioAnio.getDay());
+            const inicioSemanaActual = new Date(ahora);
+            inicioSemanaActual.setDate(ahora.getDate() - ahora.getDay());
+            return {
+                anio: ahora.getFullYear(),
+                semana: Math.floor((inicioSemanaActual - inicioSemanaUno) / (7 * 24 * 60 * 60 * 1000)) + 1
+            };
+        }
+
+        function actualizarDistribucionTrabajo(datos) {
+            const total = datos.bitacoras.length;
+            const preventivos = datos.bitacoras.filter(bitacora =>
+                (bitacora.tipo_mantenimiento || '').toLowerCase() === 'preventivo'
+            ).length;
+            const correctivos = datos.bitacoras.filter(bitacora =>
+                (bitacora.tipo_mantenimiento || '').toLowerCase() === 'correctivo'
+            ).length;
+            const porcentajePreventivos = total ? Math.round((preventivos / total) * 100) : 0;
+            const porcentajeCorrectivos = total ? Math.round((correctivos / total) * 100) : 0;
+            const ctxDona = document.getElementById('graficaDona').getContext('2d');
+
+            if (window.miGraficaDona) window.miGraficaDona.destroy();
+
+            window.miGraficaDona = new Chart(ctxDona, {
+                type: 'doughnut',
+                data: {
+                    labels: [
+                        `Preventivo ${preventivos} (${porcentajePreventivos}%)`,
+                        `Correctivo ${correctivos} (${porcentajeCorrectivos}%)`
+                    ],
+                    datasets: [{
+                        data: [preventivos, correctivos],
+                        backgroundColor: ['#198754', '#dc3545'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { font: { size: 13 } }
+                        }
+                    },
+                    cutout: '75%'
+                }
+            });
+        }
+
+        function actualizarActividadesRecientes(semana) {
+            actividadesExportables = semana.bitacoras.filter(bitacora => bitacora.fecha_registro);
+            const cuerpoTabla = document.querySelector('#tabla-bitacoras tbody');
+            const periodo = `${formatearFechaPeriodo(semana.inicio)} al ${formatearFechaPeriodo(semana.fin)}`;
+            document.getElementById('actividades-periodo').innerText =
+                `Semana ${semana.week} de ${semana.year}: ${periodo}`;
+            cuerpoTabla.innerHTML = '';
+
+            if (!semana.bitacoras.length) {
+                cuerpoTabla.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay actividades registradas en la semana seleccionada.</td></tr>';
+                return;
+            }
+
+            semana.bitacoras
+                .filter(bitacora => bitacora.fecha_registro)
+                .forEach(bitacora => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td class="align-middle">${new Date(bitacora.fecha_registro).toLocaleString('es-MX')}</td>
+                        <td class="align-middle">
+                            <div><i class="fas fa-hdd text-secondary me-2"></i> ${bitacora.nombre_equipo ? escapeHtml(bitacora.nombre_equipo) : 'Sin maquinaria'}</div>
+                            <small class="text-muted">${bitacora.nombre_area ? escapeHtml(bitacora.nombre_area) : 'Área no disponible (registro antiguo)'}</small>
+                        </td>
+                        <td class="align-middle text-primary"><i class="far fa-user me-2"></i> ${escapeHtml(bitacora.nombre_tecnico)}</td>
+                        <td class="align-middle">
+                            <span class="badge rounded-pill ${(bitacora.tipo_mantenimiento || '').toLowerCase() === 'preventivo' ? 'bg-success' : 'bg-danger'}" style="padding: 8px 12px; font-weight: 500; letter-spacing: 0.5px;">
+                                ${escapeHtml(bitacora.tipo_mantenimiento)}
+                            </span>
+                        </td>
+                        <td class="align-middle">${escapeHtml(bitacora.descripcion)}</td>
+                        <td class="align-middle">${bitacora.detalles_repuestos ? escapeHtml(bitacora.detalles_repuestos) : '<span class="text-muted">Ninguno</span>'}</td>
+                    `;
+                    cuerpoTabla.appendChild(fila);
+                });
+
+            aplicarBusquedaDashboard();
+            if (!cuerpoTabla.children.length) {
+                cuerpoTabla.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay actividades con fecha registrada en la semana seleccionada.</td></tr>';
+            }
+        }
+
+        function formatearFechaPeriodo(fecha) {
+            return new Date(`${fecha}T12:00:00`).toLocaleDateString('es-MX');
+        }
+
+        function actualizarEstadoDashboard(mensaje, clase = 'text-muted') {
+            const estado = document.getElementById('dashboard-sync-status');
+            estado.className = `small ${clase}`;
+            estado.textContent = mensaje;
+        }
+
+        function registrarActualizacionDashboard() {
+            document.getElementById('dashboard-last-update').textContent =
+                `Última actualización: ${new Date().toLocaleTimeString('es-MX')}`;
+        }
+
+        async function actualizarDashboard() {
+            if (dashboardRefreshInFlight) return;
+            dashboardRefreshInFlight = true;
+            actualizarEstadoDashboard('Sincronizando...', 'text-primary');
+            document.getElementById('btnActualizarDashboard').disabled = true;
+            try {
+                const resultados = [await cargarDatosDashboard()];
+                if (resultados.every(Boolean)) {
+                    registrarActualizacionDashboard();
+                    actualizarEstadoDashboard('Sincronizado', 'text-success');
+                } else {
+                    actualizarEstadoDashboard('No se pudo actualizar todo; se conservan los datos disponibles.', 'text-warning');
+                }
+            } finally {
+                dashboardRefreshInFlight = false;
+                document.getElementById('btnActualizarDashboard').disabled = false;
+            }
+        }
+
+        function inicializarDashboard() {
+            const semanaActual = obtenerSemanaActual();
+            document.getElementById('selectorAnio').value = semanaActual.anio;
+            document.getElementById('selectorSemana').value = semanaActual.semana;
+            document.getElementById('btnSemanaActual').addEventListener('click', () => {
+                if (dashboardRefreshInFlight) return;
+                const actual = obtenerSemanaActual();
+                document.getElementById('selectorAnio').value = actual.anio;
+                document.getElementById('selectorSemana').value = actual.semana;
+                actualizarDashboard();
+            });
+            document.getElementById('btnCargarSemana').addEventListener('click', actualizarDashboard);
+            document.getElementById('btnActualizarDashboard').addEventListener('click', actualizarDashboard);
+            actualizarDashboard();
+            if (!dashboardRefreshInterval) {
+                dashboardRefreshInterval = window.setInterval(actualizarDashboard, DASHBOARD_REFRESH_INTERVAL_MS);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', inicializarDashboard);
+
+        // ==========================================
+        // LÓGICA DEL BUSCADOR EN TIEMPO REAL
+        // ==========================================
+        function aplicarBusquedaDashboard() {
+            const textoBusqueda = document.getElementById('inputBusqueda').value.trim().toLowerCase();
+            const filasTabla = document.querySelectorAll('#tabla-bitacoras tbody tr');
+
+            filasTabla.forEach(fila => {
+                // Obtenemos todo el texto de la fila (máquina, técnico, falla, etc.)
+                const contenidoFila = fila.textContent.toLowerCase();
+                
+                // Si el texto buscado está en la fila, la mostramos; si no, la ocultamos
+                if (contenidoFila.includes(textoBusqueda)) {
+                    fila.style.display = '';
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+        }
+        document.getElementById('inputBusqueda').addEventListener('input', aplicarBusquedaDashboard);
+
+        // ==========================================
+        // LÓGICA PARA EXPORTAR A EXCEL
+        // ==========================================
+        document.getElementById('btnExportar').addEventListener('click', async function() {
+            if (this.disabled) return;
+            const busqueda = document.getElementById('inputBusqueda').value.trim();
+            const filas = [...document.querySelectorAll('#tabla-bitacoras tbody tr')];
+            const registros = actividadesExportables.filter((_, index) =>
+                filas[index] && filas[index].style.display !== 'none');
+            if (!registros.length) {
+                alert('No hay actividades visibles para exportar.');
+                return;
+            }
+            this.disabled = true;
+            try {
+                await CampoterraExport.excel(registros, {
+                    period: document.getElementById('actividades-periodo').textContent,
+                    filters: `Búsqueda: ${busqueda || 'Sin filtro'}`,
+                    generated: new Date().toLocaleString('es-MX'),
+                    filename: 'Reporte_Actividades_Campoterra'
+                });
+            } catch (error) {
+                alert(`No se pudo generar el archivo. ${error.message}`);
+            } finally {
+                this.disabled = false;
+            }
+        });
+    </script>
+
+    <!-- Script de Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Script de Chart.js para las gráficas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Plantilla institucional compartida con Reportes y Descargas -->
+    <script src="vendor/exceljs-4.4.0.min.js"></script>
+    <script src="report-logo.js"></script>
+    <script src="report-export.js"></script>
+</body>
+</html>

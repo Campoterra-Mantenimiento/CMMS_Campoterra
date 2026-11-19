@@ -1,0 +1,46 @@
+name: Publicar dashboard
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'campoterra_frontend/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validar dashboard
+        run: node --test campoterra_frontend/tests/*.test.cjs
+      - name: Preparar archivos publicos
+        run: |
+          mkdir -p _site/vendor
+          cp campoterra_frontend/*.html campoterra_frontend/*.js campoterra_frontend/*.css campoterra_frontend/*.png _site/
+          cp campoterra_frontend/vendor/*.js campoterra_frontend/vendor/*.txt _site/vendor/
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 1800000
