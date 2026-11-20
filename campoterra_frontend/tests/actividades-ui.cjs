@@ -34,11 +34,17 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.addScriptTag({path:path.join(root,'responsive.js')});
   await page.waitForFunction(()=>!document.getElementById('act-new').disabled);
   await page.locator('#act-new').click();await page.locator('#act-shift').selectOption('Noche');await page.locator('#act-assignee').selectOption('1');
+  await page.locator('#act-end-date').fill(await page.locator('#act-work-date').inputValue());
+  await page.locator('#act-materials').fill('2 bandas <img src=x onerror=alert(1)>');
   await page.locator('#act-description').fill('Revisar bomba <img src=x onerror=alert(1)>');
   await page.locator('#act-form button[type=submit]').click();
   await page.waitForFunction(()=>document.getElementById('act-form').hidden);
   assert.equal(await page.locator('#act-rows img').count(),0);
-  await page.locator('[data-activity]:not([data-quick])').click();await page.locator('input[name=act-result][value="No realizada"]').check();
+  assert.match(await page.locator('#act-rows').textContent(),/2 bandas/);
+  await page.locator('[data-activity]:not([data-quick])').click();
+  assert.match(await page.locator('#act-materials').inputValue(),/2 bandas/);
+  assert.ok(await page.locator('#act-end-date').inputValue());
+  await page.locator('input[name=act-result][value="No realizada"]').check();
   await page.locator('#act-form button[type=submit]').click();
   assert.equal(await page.locator('#act-notes').evaluate(e=>e.validity.valueMissing),true);
   await page.locator('#act-notes').fill('Faltó refacción');
@@ -62,7 +68,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   assert.equal(await page.locator('#act-period').inputValue(),'dia');
   await page.locator('#act-tech').selectOption('');await page.locator('#act-period').selectOption('semana');await page.locator('#act-load').click();
   await page.waitForFunction(()=>document.getElementById('act-summary').textContent.startsWith('2 actividades'));
-  await page.locator('#act-search').fill('banda');
+  await page.locator('#act-search').fill('Atender paro');
   assert.equal(await page.locator('#act-total').textContent(),'1');
   await page.locator('[data-quick="Realizada"]').click();
   await page.waitForFunction(()=>document.getElementById('act-form').hidden);
@@ -110,3 +116,4 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   assert.deepEqual(errors,[]);console.log('Actividades: alta, edición, emergentes, validación, conflicto, filtros, enlace de evaluación y móvil OK');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
+

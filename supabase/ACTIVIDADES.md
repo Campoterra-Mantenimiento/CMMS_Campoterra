@@ -34,3 +34,10 @@ Ejecutar una sola vez `migrations/202611040012_eliminar_actividades.sql` y publi
 
 ## Turnos por actividad
 Ejecutar `migrations/202611120013_turnos_actividades.sql` antes de publicar el frontend. El encargado selecciona Día (06:00–14:00), Tarde (14:00–22:00) o Noche (22:00–06:00 del día siguiente). La fecha corresponde al inicio del turno. Los registros anteriores permanecen sin asignar y pueden editarse. El turno se incluye en el listado, búsqueda y exportaciones semanales PDF/Excel. No modifica las calificaciones ni el catálogo de turnos de las bitácoras.
+
+## Fecha de terminación y materiales
+Antes de publicar estos cambios, ejecutar una sola vez `migrations/202611200014_terminacion_materiales_actividades.sql` en el SQL Editor de Supabase, después de la migración de turnos. Luego publicar el frontend.
+
+El encargado puede capturar y editar la fecha de terminación y los materiales (texto libre con cantidades, máximo 2000 caracteres). Ambos son opcionales para conservar los registros anteriores. La fecha no puede ser anterior a la fecha de la actividad; no se llena automáticamente ni cambia el resultado. Los materiales son informativos y no descuentan inventario. Ambos campos aparecen en el listado, PDF diario, PDF semanal y Excel semanal. La consulta por día o semana sigue usando la fecha original de la actividad. Guardar y agregar otra limpia estos dos campos para la nueva tarea.
+
+Verificación: crear una actividad con ambos datos, consultarla y editarla, probar fecha anterior, revisar PDF y Excel y comprobar que un registro antiguo se abre sin datos inventados.

@@ -10,11 +10,11 @@ test('actividades: permisos, reintentos, concurrencia, seguimiento y planificaci
   await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);
    create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
    grant usage on schema auth to authenticated;insert into auth.users values('${boss}'),('${device}');`);
-  for(const name of ['202610060001_pilot_base.sql','202611040010_actividades.sql','202611040011_tipos_actividades.sql','202611040012_eliminar_actividades.sql','202611120013_turnos_actividades.sql'])await db.exec(fs.readFileSync(path.join(__dirname,'../migrations',name),'utf8'));
+  for(const name of ['202610060001_pilot_base.sql','202611040010_actividades.sql','202611040011_tipos_actividades.sql','202611040012_eliminar_actividades.sql','202611120013_turnos_actividades.sql','202611200014_terminacion_materiales_actividades.sql'])await db.exec(fs.readFileSync(path.join(__dirname,'../migrations',name),'utf8'));
   await db.exec(`insert into campoterra_private.accesos(auth_user_id,tipo,nombre) values('${boss}','encargado','Jefe'),('${device}','dispositivo','Tablet');
    insert into public.tecnicos(nombre) values('Técnico');`);
   async function run(user,sql,args=[]){await db.exec('begin;set local role authenticated');try{await db.query("select set_config('request.jwt.claim.sub',$1,true)",[user]);const r=await db.query(sql,args);await db.exec('commit');return r.rows;}catch(e){await db.exec('rollback');throw e;}}
-  const save=(user,over={})=>{const r={id,tech:1,date:'2020-01-01',text:'Lubricar bomba',type:'Preventiva',state:'Pendiente',notes:'',revision:0,shift:null,...over};return run(user,'select public.guardar_actividad($1,$2,$3,$4,$5,$6,$7,$8,$9) as r',Object.values(r));};
+  const save=(user,over={})=>{const r={id,tech:1,date:'2020-01-01',text:'Lubricar bomba',type:'Preventiva',state:'Pendiente',notes:'',revision:0,shift:null,end:null,materials:null,...over};return run(user,'select public.guardar_actividad($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) as r',Object.values(r));};
   await assert.rejects(save(boss,{type:'Planeada'}),/Revisa/);
   await assert.rejects(save(device),/exclusivo/);
   await assert.rejects(save(boss,{text:' '}),/Revisa/);
@@ -22,12 +22,15 @@ test('actividades: permisos, reintentos, concurrencia, seguimiento y planificaci
   await assert.rejects(save(boss,{date:'2999-01-01',state:'Realizada'}),/futuras/);
   await assert.rejects(save(boss,{date:'2999-01-01',type:'Emergente'}),/futuras/);
   await assert.rejects(save(boss,{shift:'Otro'}),/turno válido/);
+  await assert.rejects(save(boss,{end:'2019-12-31'}),/anterior/);
+  await assert.rejects(save(boss,{materials:'x'.repeat(2001)}),/Materiales/);
   const first=(await save(boss))[0].r;
   assert.equal(first.turno,null);
   assert.equal(first.revision,1);assert.equal(first.creado_por,boss);
   assert.deepEqual((await save(boss))[0].r,first);
   await assert.rejects(save(boss,{text:'Otra tarea'}),/cambió/);
-  const updated=(await save(boss,{state:'No realizada',notes:'Faltó repuesto',revision:1,shift:'Noche'}))[0].r;
+  const updated=(await save(boss,{state:'No realizada',notes:'Faltó repuesto',revision:1,shift:'Noche',end:'2020-01-03',materials:'2 bandas'}))[0].r;
+  assert.equal(updated.fecha_terminacion,'2020-01-03');assert.equal(updated.materiales,'2 bandas');
   assert.equal(updated.turno,'Noche');assert.equal(updated.revision,2);assert.equal(updated.estado,'No realizada');
   await assert.rejects(save(boss,{revision:1,state:'Realizada'}),/cambió/);
   await assert.rejects(save(boss,{revision:2,date:'2020-01-02'}),/cambió/);

@@ -39,14 +39,14 @@
         const response = await authenticatedFetch('http://localhost:8000/api/' + route, options);
         const data = await response.json();
         if (!response.ok) throw new Error(/schema cache|does not exist|could not find/i.test(data.detail || '')
-            ? 'Falta instalar 202611120013_turnos_actividades.sql en Supabase para usar las actividades.' : data.detail || 'No se pudo completar la operación.');
+            ? 'Falta instalar 202611200014_terminacion_materiales_actividades.sql en Supabase para usar las actividades.' : data.detail || 'No se pudo completar la operación.');
         return data;
     }
     function render() {
         const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
         const search = normalize($('act-search').value.trim());
         const filtered = rows.filter(r => (!loaded.tech || String(r.id_tecnico) === loaded.tech)
-            && (!search || normalize([r.descripcion,r.observaciones,r.tipo,r.estado,r.turno,technicians.find(t => t.id_tecnico === r.id_tecnico)?.nombre].join(' ')).includes(search)))
+            && (!search || normalize([r.descripcion,r.materiales,r.observaciones,r.tipo,r.estado,r.turno,technicians.find(t => t.id_tecnico === r.id_tecnico)?.nombre].join(' ')).includes(search)))
             .sort((a,b) => a.fecha_trabajo.localeCompare(b.fecha_trabajo) || a.creado_en.localeCompare(b.creado_en) || a.id_actividad.localeCompare(b.id_actividad));
         const count = state => filtered.filter(r => r.estado === state).length;
         $('act-range').textContent = (loaded.period === 'dia' ? 'Día: ' : 'Semana: ') + label(loaded.start) + (loaded.period === 'semana' ? ' al ' + label(loaded.end) : '') + ' · ' + (technicians.find(t => String(t.id_tecnico) === loaded.tech)?.nombre || 'Todos los técnicos');
@@ -55,8 +55,8 @@
         const pages = Math.max(1, Math.ceil(filtered.length / pageSize)); page = Math.min(page, pages);
         $('act-rows').innerHTML = filtered.slice((page-1)*pageSize,page*pageSize).map(r => {
             const name = technicians.find(t => t.id_tecnico === r.id_tecnico)?.nombre || 'Técnico no disponible';
-            return `<tr><td>${esc(label(r.fecha_trabajo))}<br><strong>${esc(name)}</strong></td><td>${esc(r.turno || 'Sin asignar')}</td><td style="min-width:180px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(r.descripcion)}</td><td><span class="activity-type ${r.tipo === 'Emergente' ? 'emergent' : ''}">${esc(r.tipo)}</span></td><td><span class="badge ${r.estado === 'Realizada' ? 'bg-success' : r.estado === 'No realizada' ? 'bg-danger' : 'bg-secondary'}">${esc(r.estado)}</span></td><td style="min-width:150px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(r.observaciones || '—')}</td><td><div class="d-flex gap-1">${r.estado !== 'Realizada' ? `<button type="button" class="btn btn-sm btn-outline-success" data-quick="Realizada" data-activity="${esc(r.id_actividad)}" aria-label="Marcar realizada" title="Marcar realizada">✓</button>` : ''}<button type="button" class="btn btn-sm btn-outline-danger" data-quick="No realizada" data-activity="${esc(r.id_actividad)}" aria-label="Registrar no realizada" title="Registrar no realizada">×</button><button type="button" class="btn btn-sm btn-outline-primary" data-activity="${esc(r.id_actividad)}">Editar</button><button type="button" class="btn btn-sm btn-outline-danger" data-delete="${esc(r.id_actividad)}">Eliminar</button></div></td></tr>`;
-        }).join('') || '<tr><td colspan="7">No hay actividades registradas para esta consulta.</td></tr>';
+            return `<tr><td>${esc(label(r.fecha_trabajo))}<br><strong>${esc(name)}</strong></td><td>${esc(r.turno || 'Sin asignar')}</td><td style="min-width:180px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(r.descripcion)}</td><td><span class="activity-type ${r.tipo === 'Emergente' ? 'emergent' : ''}">${esc(r.tipo)}</span></td><td><span class="badge ${r.estado === 'Realizada' ? 'bg-success' : r.estado === 'No realizada' ? 'bg-danger' : 'bg-secondary'}">${esc(r.estado)}</span></td><td style="min-width:150px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(r.observaciones || '—')}</td><td>${esc(r.fecha_terminacion ? label(r.fecha_terminacion) : "—")}</td><td style="min-width:150px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(r.materiales || "—")}</td><td><div class="d-flex gap-1">${r.estado !== 'Realizada' ? `<button type="button" class="btn btn-sm btn-outline-success" data-quick="Realizada" data-activity="${esc(r.id_actividad)}" aria-label="Marcar realizada" title="Marcar realizada">✓</button>` : ''}<button type="button" class="btn btn-sm btn-outline-danger" data-quick="No realizada" data-activity="${esc(r.id_actividad)}" aria-label="Registrar no realizada" title="Registrar no realizada">×</button><button type="button" class="btn btn-sm btn-outline-primary" data-activity="${esc(r.id_actividad)}">Editar</button><button type="button" class="btn btn-sm btn-outline-danger" data-delete="${esc(r.id_actividad)}">Eliminar</button></div></td></tr>`;
+        }).join('') || '<tr><td colspan="9">No hay actividades registradas para esta consulta.</td></tr>';
         $('act-page-label').textContent = `Página ${page} de ${pages}`;
         $('act-prev').disabled = page === 1; $('act-next').disabled = page === pages;
     }
@@ -92,6 +92,9 @@
         $('act-shift').value = record?.turno || '';
         $('act-shift').options[0].disabled = !!record?.turno;
         $('act-work-date').value = record?.fecha_trabajo || loaded.date;
+        $('act-end-date').value = record?.fecha_terminacion || '';
+        $('act-end-date').min = record?.fecha_trabajo || loaded.date;
+        $('act-materials').value = record?.materiales || '';
         $('act-assignee').value = record ? String(record.id_tecnico) : loaded.tech;
         $('act-work-date').disabled = $('act-assignee').disabled = !!record;
         $('act-description').value = record?.descripcion || ''; $('act-type').value = record?.tipo === 'Planeada' ? '' : record?.tipo || 'Preventiva';
@@ -102,11 +105,14 @@
         $('act-form').hidden = false; $('act-description').focus();
         return true;
     }
+    $('act-work-date').addEventListener('input', () => {$('act-end-date').min = $('act-work-date').value;});
     $('act-form').addEventListener('input', () => {dirty = true;});
     $('act-form').addEventListener('submit', async event => {
         event.preventDefault(); if (busy || !editing) return;
         const body = {...editing, id_tecnico:Number($('act-assignee').value), fecha_trabajo:$('act-work-date').value,
+            fecha_terminacion:$('act-end-date').value || null, materiales:$('act-materials').value.trim(),
             turno:$('act-shift').value || null, descripcion:$('act-description').value.trim(), tipo:$('act-type').value, estado:status(), observaciones:$('act-notes').value.trim()};
+        if (body.fecha_terminacion && body.fecha_terminacion < body.fecha_trabajo) {message('La fecha de terminación no puede ser anterior a la fecha de la actividad.'); return;}
         if (!body.turno && editing.revision === 0) {message('Selecciona el turno de la actividad.'); return;}
         if (!['Preventiva','Correctiva','Emergente'].includes(body.tipo)) {message('Selecciona Preventiva, Correctiva o Emergente.'); return;}
         if (!body.id_tecnico || !body.descripcion || !body.fecha_trabajo) {message('Completa fecha, técnico y actividad.'); return;}
@@ -124,7 +130,7 @@
         } catch(e) {message(e.message + ' Si la respuesta fue incierta, consulta de nuevo antes de cambiar la actividad.');}
         finally {busy = false; controls();}
         if (succeeded && another) {
-            open(null); $('act-work-date').value=body.fecha_trabajo; $('act-assignee').value=String(body.id_tecnico);
+            open(null); $('act-work-date').value=body.fecha_trabajo; $('act-end-date').min=body.fecha_trabajo; $('act-assignee').value=String(body.id_tecnico);
             $('act-shift').value=body.turno || ''; $('act-type').value=body.tipo; $('act-another').checked=true;
         }
     });

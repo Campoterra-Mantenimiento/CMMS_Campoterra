@@ -43,7 +43,7 @@ test('Excel semanal conserva las 24 actividades, notas, logo y texto seguro',asy
  const s=book.worksheets[0];assert.equal(s.rowCount,33);assert.equal(s.getImages().length,1);
  assert.match(s.getCell('A4').value,/Semana 43 de 2026/);assert.equal(s.getCell('C10').value,'=1+1');
  assert.equal(s.getCell('C10').type,ExcelJS.ValueType.String);assert.equal(s.getCell('F10').value,'Falta pieza\nSeguimiento');
- assert.equal(s.getCell('G9').value,'Turno');assert.equal(s.getCell('G10').value,'Sin asignar');assert.equal(s.autoFilter,'A9:G33');assert.equal(s.pageSetup.printTitlesRow,'9:9');
+ assert.equal(s.getCell('G9').value,'Turno');assert.equal(s.getCell('G10').value,'Sin asignar');assert.equal(s.autoFilter,'A9:I33');assert.equal(s.pageSetup.printTitlesRow,'9:9');
 });
 
 test('reporte conserva turno nocturno y fecha de inicio',()=>{
@@ -51,4 +51,14 @@ test('reporte conserva turno nocturno y fecha de inicio',()=>{
  const report=api.prepare([{...records[0],turno:'Noche'}],technicians,api.weekRange(2026,43));
  assert.match(report.body[0][6],/Noche.*22:00.*06:00.*siguiente/);
  assert.equal(report.body[0][0],'20/10/2026');
+});
+
+test('terminación y materiales se conservan en reportes y Excel como texto',async()=>{
+ const ExcelJS=require('../vendor/exceljs-4.4.0.min.js'),ctx=setup({ExcelJS}),api=ctx.window.CampoterraActivitiesExport;
+ const report=api.prepare([{...records[0],fecha_terminacion:'2026-10-22',materiales:'=2 bandas\n1 aceite'}],technicians,api.weekRange(2026,43));
+ assert.equal(report.body[0][7],'22/10/2026');assert.equal(report.body[0][8],'=2 bandas\n1 aceite');
+ await api.excel(report);
+ const book=new ExcelJS.Workbook();await book.xlsx.load(Buffer.from(await ctx.blob.arrayBuffer()));
+ assert.equal(book.worksheets[0].getCell('I10').type,ExcelJS.ValueType.String);
+ assert.equal(book.worksheets[0].getCell('H9').value,'Fecha de terminación');
 });

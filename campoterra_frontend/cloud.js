@@ -92,7 +92,8 @@
                     changed = await result(client.rpc('guardar_actividad', {
                         p_id: body.id_actividad, p_tecnico: body.id_tecnico, p_fecha: body.fecha_trabajo,
                         p_descripcion: body.descripcion, p_tipo: body.tipo, p_estado: body.estado,
-                        p_observaciones: body.observaciones, p_revision: body.revision, p_turno: body.turno ?? null
+                        p_observaciones: body.observaciones, p_revision: body.revision, p_turno: body.turno ?? null,
+                        p_fecha_terminacion: body.fecha_terminacion ?? null, p_materiales: body.materiales ?? null
                     }));
                 } else if (route === '/api/evaluaciones' && method === 'POST') {
                     changed = await result(client.rpc('guardar_evaluacion', {

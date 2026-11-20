@@ -1,6 +1,6 @@
 /* Reporte de actividades asignadas; no modifica las evaluaciones ni las bitácoras. */
 (() => {
-    const headers = ['Fecha', 'Técnico', 'Actividad', 'Tipo', 'Resultado', 'Observaciones', 'Turno'];
+    const headers = ['Fecha', 'Técnico', 'Actividad', 'Tipo', 'Resultado', 'Observaciones', 'Turno', 'Fecha de terminación', 'Materiales'];
     const dateLabel = value => new Date(value + 'T12:00:00Z').toLocaleDateString('es-MX', {timeZone:'UTC'});
     function weekRange(year, week) {
         if (!Number.isInteger(year) || year < 2000 || year > 2100 || !Number.isInteger(week) || week < 1)
@@ -19,7 +19,7 @@
         if (!rows.length) throw new Error('No hay actividades guardadas para ' + (meta.daily ? 'ese día' : 'esa semana') + ' y técnico.');
         return {
             daily: !!meta.daily,
-            body:rows.map(r=>[dateLabel(r.fecha_trabajo),names.get(r.id_tecnico)||'Técnico no disponible',r.descripcion,r.tipo,r.estado,r.observaciones||'—',({Día:'Día (06:00–14:00)',Tarde:'Tarde (14:00–22:00)',Noche:'Noche (22:00–06:00 del día siguiente)'})[r.turno]||'Sin asignar']),
+            body:rows.map(r=>[dateLabel(r.fecha_trabajo),names.get(r.id_tecnico)||'Técnico no disponible',r.descripcion,r.tipo,r.estado,r.observaciones||'—',({Día:'Día (06:00–14:00)',Tarde:'Tarde (14:00–22:00)',Noche:'Noche (22:00–06:00 del día siguiente)'})[r.turno]||'Sin asignar',r.fecha_terminacion ? dateLabel(r.fecha_terminacion) : '—',r.materiales || '—']),
             period:meta.daily ? `Fecha de las actividades: ${dateLabel(meta.start)}` : `Semana ${meta.week} de ${meta.year} · ${dateLabel(meta.start)} al ${dateLabel(meta.end)}`,
             filter:'Técnico: '+(meta.tech ? names.get(Number(meta.tech))||'No disponible' : 'Todos'),
             summary:`Total: ${rows.length} | Realizadas: ${rows.filter(r=>r.estado==='Realizada').length} | Pendientes: ${rows.filter(r=>r.estado==='Pendiente').length} | No realizadas: ${rows.filter(r=>r.estado==='No realizada').length}`,
@@ -37,14 +37,14 @@
         const brand=dependencies('excel'), book=new window.ExcelJS.Workbook();
         book.creator='Campoterra CMMS';book.created=new Date();
         const sheet=book.addWorksheet('Actividades semanales');
-        const widths=[15,25,60,18,20,65,32];sheet.columns=widths.map(width=>({width}));
+        const widths=[15,25,60,18,20,65,32,22,55];sheet.columns=widths.map(width=>({width}));
         [1,2,3].forEach(n=>sheet.getRow(n).height=26);
         sheet.addImage(book.addImage({base64:brand.data,extension:'png'}),{tl:{col:0,row:0},ext:{width:260,height:260/brand.ratio}});
-        sheet.mergeCells('C1:G2');sheet.getCell('C1').value='Actividades de mantenimiento';
+        sheet.mergeCells('C1:I2');sheet.getCell('C1').value='Actividades de mantenimiento';
         sheet.getCell('C1').font={bold:true,size:20,color:{argb:'FF0B1528'}};
-        sheet.mergeCells('C3:G3');sheet.getCell('C3').value='Reporte semanal · Campoterra';
+        sheet.mergeCells('C3:I3');sheet.getCell('C3').value='Reporte semanal · Campoterra';
         [report.period,report.filter,report.summary,`Generado: ${report.generated} · Solo actividades guardadas`].forEach((text,i)=>{
-            sheet.mergeCells(i+4,1,i+4,7);sheet.getCell(i+4,1).value=text;sheet.getRow(i+4).height=30;
+            sheet.mergeCells(i+4,1,i+4,9);sheet.getCell(i+4,1).value=text;sheet.getRow(i+4).height=30;
         });
         sheet.getRow(9).values=headers;sheet.getRow(9).height=28;
         sheet.getRow(9).eachCell(c=>{c.font={bold:true,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0B1528'}};});
@@ -54,8 +54,8 @@
             row.eachCell(c=>{c.font={size:11};if(i%2===0)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF0F5F4'}};});
         });
         sheet.eachRow(row=>row.alignment={wrapText:true,vertical:'top'});
-        sheet.autoFilter=`A9:G${sheet.rowCount}`;sheet.views=[{state:'frozen',ySplit:9}];
-        sheet.pageSetup={orientation:'landscape',paperSize:9,fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:'9:9',printArea:`A1:G${sheet.rowCount}`};
+        sheet.autoFilter=`A9:I${sheet.rowCount}`;sheet.views=[{state:'frozen',ySplit:9}];
+        sheet.pageSetup={orientation:'landscape',paperSize:9,fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:'9:9',printArea:`A1:I${sheet.rowCount}`};
         sheet.headerFooter.oddFooter='&LCampoterra | Mantenimiento&R Página &P de &N';
         const url=URL.createObjectURL(new Blob([await book.xlsx.writeBuffer()],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
         const link=document.createElement('a');link.href=url;link.download=report.filename+'.xlsx';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
@@ -69,7 +69,7 @@
         const top=37+info.length*4;
         doc.autoTable({startY:top,margin:{top,bottom:18,left:14,right:14},head:[headers],body:report.body,
             theme:'striped',styles:{fontSize:8,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:[11,21,40]},
-            columnStyles:{0:{cellWidth:22},1:{cellWidth:28},2:{cellWidth:61},3:{cellWidth:23},4:{cellWidth:26},5:{cellWidth:70},6:{cellWidth:39}},
+            columnStyles:{0:{cellWidth:18},1:{cellWidth:25},2:{cellWidth:43},3:{cellWidth:20},4:{cellWidth:22},5:{cellWidth:40},6:{cellWidth:27},7:{cellWidth:24},8:{cellWidth:50}},
             didDrawPage:()=>{
                 doc.addImage(brand.data,'PNG',14,7,75,75/brand.ratio);
                 doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(11,21,40);doc.text('Actividades de mantenimiento',102,16);
