@@ -34,3 +34,9 @@
  .eval-tabs { gap:0; } .eval-tabs button { padding:12px 8px; font-size:14px; }
  .outcome { font-size:12px; } .activity-outcomes { padding:12px; }
 }
+
+.activity-side { min-width:0; display:flex; flex-direction:column; gap:18px; }
+.activity-routines { padding:18px; border:1px solid #dce5f1; border-radius:12px; background:#f7faff; }
+.activity-routine-option { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid #e1e8f2; cursor:pointer; font-size:14px; }
+.activity-routine-option input { flex:0 0 auto; width:18px; height:18px; margin-top:2px; accent-color:#176bff; }
+.activity-routine-option:focus-within { outline:2px solid #176bff; outline-offset:2px; }

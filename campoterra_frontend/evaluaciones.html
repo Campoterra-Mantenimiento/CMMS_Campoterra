@@ -163,11 +163,19 @@
 <label class="d-block mt-3">Actividad<textarea id="act-description" class="form-control" rows="2" maxlength="1000" required></textarea></label>
 <label class="d-block mt-3">Observaciones<textarea id="act-notes" class="form-control" rows="2" maxlength="2000"></textarea></label>
 <small class="text-muted">Al editar se conservan el técnico y la fecha originales.</small></div>
-<fieldset class="activity-outcomes"><legend>Resultado de la actividad</legend><div class="outcome-options">
+<div class="activity-side"><fieldset class="activity-outcomes"><legend>Resultado de la actividad</legend><div class="outcome-options">
 <label class="outcome pending"><input type="radio" name="act-result" value="Pendiente" checked><span aria-hidden="true">◷</span><strong>Pendiente</strong></label>
 <label class="outcome done"><input type="radio" name="act-result" value="Realizada"><span aria-hidden="true">✓</span><strong>Realizada</strong></label>
 <label class="outcome missed"><input type="radio" name="act-result" value="No realizada"><span aria-hidden="true">×</span><strong>No realizada</strong></label>
-</div><p id="act-status-help" class="eval-caption mt-3"></p></fieldset></div>
+</div><p id="act-status-help" class="eval-caption mt-3"></p></fieldset>
+<section id="act-routines" class="activity-routines" aria-labelledby="act-routines-title">
+<h3 id="act-routines-title" class="h5">Actividades de rutina</h3>
+<p class="eval-caption">Selecciona las tareas de hoy. Se asignan por separado como pendientes al técnico, fecha y turno del formulario.</p>
+<div id="act-routine-list"></div>
+<p class="eval-caption mt-2">Se aplican el tipo, la fecha de terminación y los materiales indicados a cada tarea. La actividad escrita y las observaciones se guardan por separado con Guardar actividad.</p>
+<button id="act-assign-routines" type="button" class="btn btn-outline-primary">Asignar seleccionadas</button>
+<p id="act-routine-message" class="eval-caption mt-2 mb-0" role="status" aria-live="polite"></p>
+</section></div></div>
 <div class="d-flex flex-wrap gap-3 align-items-center mt-3"><button type="submit" class="btn btn-primary">Guardar actividad</button><button type="button" id="act-cancel" class="btn btn-outline-secondary">Cancelar</button><label class="ms-sm-auto"><input type="checkbox" id="act-another" class="form-check-input me-2">Guardar y agregar otra</label></div>
 </fieldset></form>
 <div class="activity-list-heading"><h3 class="h5">Actividades registradas</h3><label><span class="visually-hidden">Buscar actividad, técnico u observaciones</span><input id="act-search" type="search" class="form-control" placeholder="Buscar actividad o técnico…"></label></div><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Fecha / técnico</th><th>Turno</th><th>Actividad</th><th>Tipo</th><th>Resultado</th><th>Observaciones</th><th>Fecha de terminación</th><th>Materiales</th><th>Acción</th></tr></thead><tbody id="act-rows"><tr><td colspan="9">Cargando actividades…</td></tr></tbody></table></div>

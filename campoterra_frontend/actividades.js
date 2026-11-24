@@ -4,6 +4,24 @@
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
     let technicians = [], rows = [], loaded = null, editing = null, busy = false, dirty = false, page = 1;
     const pageSize = 10;
+    const routines = [
+        ['deshielo-congelador', 'Aplicar deshielo correspondiente al congelador.'],
+        ['revision-presiones', 'Revisión de presiones, monitoreo y atención en cuarto de máquinas.'],
+        ['deshielo-conservadores', 'Aplicar deshielo al congelador, conservador 1 y 2.'],
+        ['apagado-hora-punta', 'Apagar todo el sistema de refrigeración antes de la hora punta.'],
+        ['arranque-refrigeracion', 'Arranque de todo el sistema de refrigeración.'],
+        ['estabilizar-presiones', 'Controlar las presiones hasta que se estabilice el sistema por inicio de arranque.']
+    ];
+    $('act-routine-list').innerHTML = routines.map(([id,text]) =>
+        '<label class="activity-routine-option"><input type="checkbox" value="'+id+'"><span>'+esc(text)+'</span></label>').join('');
+    // Identidad estable: un reintento o dos ventanas no crean dos rutinas iguales.
+    async function routineId(date, tech, shift, key) {
+        const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256',
+            new TextEncoder().encode(JSON.stringify(['campoterra-rutina-v1',date,tech,shift,key]))));
+        bytes[6] = (bytes[6] & 15) | 80; bytes[8] = (bytes[8] & 63) | 128;
+        const hex = Array.from(bytes.slice(0,16), b => b.toString(16).padStart(2,'0')).join('');
+        return [hex.slice(0,8),hex.slice(8,12),hex.slice(12,16),hex.slice(16,20),hex.slice(20)].join('-');
+    }
     function showTab(activities) {
         $('activities-view').hidden = !activities; $('grades-view').hidden = activities;
         $('grades-week-chip').hidden = activities;
@@ -78,7 +96,7 @@
             $('act-tech').value = tech; $('act-message').className = 'alert d-none'; render();
         } catch(e) {
             loaded = null; rows = []; message(e.message);
-            $('act-rows').innerHTML = '<tr><td colspan="7">No se pudieron cargar las actividades. Pulsa Consultar para reintentar.</td></tr>';
+            $('act-rows').innerHTML = '<tr><td colspan="9">No se pudieron cargar las actividades. Pulsa Consultar para reintentar.</td></tr>';
             ['act-total','act-pending','act-done','act-missed'].forEach(id => $(id).textContent = '—');
             ['act-summary','act-range','act-page-label'].forEach(id => $(id).textContent = '');
             $('act-prev').disabled = true; $('act-next').disabled = true;
@@ -100,6 +118,9 @@
         $('act-description').value = record?.descripcion || ''; $('act-type').value = record?.tipo === 'Planeada' ? '' : record?.tipo || 'Preventiva';
         setStatus(record?.estado || 'Pendiente'); $('act-notes').value = record?.observaciones || '';
         $('act-another').checked = false; $('act-another').disabled = !!record;
+        $('act-routines').hidden = !!record;
+        $('act-routine-list').querySelectorAll('input').forEach(input => input.checked = false);
+        $('act-routine-message').textContent = '';
         $('act-form-title').textContent = record ? 'Revisar actividad' : 'Nueva actividad';
         if (record?.tipo === 'Planeada') message('Esta actividad se guardó como Planeada. Selecciona su tipo antes de guardar.', 'info');
         $('act-form').hidden = false; $('act-description').focus();
@@ -134,6 +155,45 @@
             $('act-shift').value=body.turno || ''; $('act-type').value=body.tipo; $('act-another').checked=true;
         }
     });
+    $('act-assign-routines').onclick = async () => {
+        if (busy || !loaded || !editing || editing.revision !== 0) return;
+        const selected = [...$('act-routine-list').querySelectorAll('input:checked')];
+        const say = text => {$('act-routine-message').textContent = text;};
+        if (!selected.length) {say('Selecciona al menos una actividad de rutina.'); return;}
+        const tech=Number($('act-assignee').value), date=$('act-work-date').value, shift=$('act-shift').value;
+        const type=$('act-type').value, end=$('act-end-date').value || null, materials=$('act-materials').value.trim();
+        if (!date || !tech || !['Día','Tarde','Noche'].includes(shift)) {say('Selecciona fecha, técnico y turno.'); return;}
+        if (!['Preventiva','Correctiva','Emergente'].includes(type)) {say('Selecciona un tipo de actividad.'); return;}
+        if (end && end < date) {say('La fecha de terminación no puede ser anterior a la fecha de la actividad.'); return;}
+        if (date > today && type === 'Emergente') {say('Para fechas futuras no puedes asignar actividades emergentes.'); return;}
+        let created=0, existing=0;
+        busy=true; controls(); say('Asignando actividades…');
+        try {
+            const current=await request('actividades?desde='+date+'&hasta='+date);
+            const known=new Map(current.map(r=>[r.id_actividad,r]));
+            for (const input of selected) {
+                const id=await routineId(date,tech,shift,input.value);
+                let saved=known.get(id);
+                if (saved) existing++;
+                else {
+                    saved=await request('actividades',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+                        id_actividad:id,revision:0,id_tecnico:tech,fecha_trabajo:date,turno:shift,
+                        descripcion:routines.find(r=>r[0]===input.value)[1],tipo:type,estado:'Pendiente',
+                        fecha_terminacion:end,materiales:materials,observaciones:''
+                    })});
+                    created++;
+                }
+                rows=rows.filter(r=>r.id_actividad!==saved.id_actividad);
+                if (saved.fecha_trabajo>=loaded.start && saved.fecha_trabajo<=loaded.end) rows.push(saved);
+                input.checked=false;
+            }
+            say(created+' actividades asignadas. '+(existing ? existing+' ya estaban asignadas y se conservaron sin cambios. ' : '')+
+                'Consulta la fecha y técnico elegidos para verlas. Puedes seguir asignando tareas.');
+        } catch(e) {
+            say(created+' actividades confirmadas en este intento. '+e.message+
+                ' Puedes reintentar las seleccionadas: se comprobarán las ya guardadas para evitar duplicarlas.');
+        } finally {busy=false; controls(); render();}
+    };
     async function removeActivity(record) {
         if (busy) return;
         if (editing?.id_actividad === record.id_actividad && !leave()) return;

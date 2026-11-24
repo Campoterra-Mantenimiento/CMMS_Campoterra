@@ -113,6 +113,55 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.setViewportSize({width:390,height:844});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
   await page.locator('#actividades-panel').screenshot({path:path.join(root,'../tmp/actividades-mobile.png')});
+
+  await page.setViewportSize({width:1440,height:1100});
+  await page.locator('#act-new').click();
+  await page.locator('#act-assign-routines').click();
+  assert.match(await page.locator('#act-routine-message').textContent(),/Selecciona al menos/);
+  const choices=page.locator('#act-routine-list input');
+  assert.equal(await choices.count(),6);
+  await choices.nth(0).check();
+  await page.locator('#act-assign-routines').click();
+  assert.match(await page.locator('#act-routine-message').textContent(),/fecha, técnico y turno/);
+  await page.locator('#act-assignee').selectOption('1');
+  await page.locator('#act-shift').selectOption('Día');
+  await page.locator('#act-description').fill('Trabajo especial sin guardar');
+  await page.locator('#act-materials').fill('1 herramienta');
+  await choices.nth(1).check();
+  const before=await page.evaluate(()=>window.saved.length);
+  // Simula una respuesta perdida después de guardar la segunda rutina.
+  await page.evaluate(()=>{
+    const original=window.authenticatedFetch;let posts=0;
+    window.authenticatedFetch=async (url,opts)=>{
+      const result=await original(url,opts);
+      if(opts?.method==='POST' && ++posts===2)throw new Error('Respuesta perdida');
+      return result;
+    };
+  });
+  await page.locator('#act-assign-routines').click();
+  await page.waitForFunction(()=>document.getElementById('act-routine-message').textContent.includes('Respuesta perdida'));
+  assert.equal(await page.evaluate(()=>window.saved.length),before+2);
+  assert.equal(await choices.nth(0).isChecked(),false);
+  assert.equal(await choices.nth(1).isChecked(),true);
+  await page.locator('#act-assign-routines').click();
+  await page.waitForFunction(()=>document.getElementById('act-routine-message').textContent.includes('ya estaban'));
+  assert.equal(await page.evaluate(()=>window.saved.length),before+2);
+  assert.equal(await page.locator('#act-description').inputValue(),'Trabajo especial sin guardar');
+  const routine=await page.evaluate(()=>window.saved.find(r=>r.descripcion.startsWith('Aplicar deshielo correspondiente')));
+  assert.equal(routine.estado,'Pendiente');assert.equal(routine.materiales,'1 herramienta');
+  await choices.nth(0).check();await choices.nth(1).check();
+  await page.locator('#act-assign-routines').click();
+  await page.waitForFunction(()=>document.getElementById('act-routine-message').textContent.includes('2 ya estaban'));
+  assert.equal(await page.evaluate(()=>window.saved.length),before+2);
+  // Otro turno puede tener sus propias rutinas.
+  await page.locator('#act-shift').selectOption('Tarde');await choices.nth(0).check();
+  await page.locator('#act-assign-routines').click();
+  await page.waitForFunction(()=>document.getElementById('act-routine-message').textContent.startsWith('1 actividades'));
+  assert.equal(await page.evaluate(()=>window.saved.length),before+3);
+  await page.locator('#act-form').screenshot({path:path.join(root,'../tmp/rutinas-desktop.png')});
+  await page.setViewportSize({width:390,height:844});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await page.locator('#act-routines').screenshot({path:path.join(root,'../tmp/rutinas-mobile.png')});
   assert.deepEqual(errors,[]);console.log('Actividades: alta, edición, emergentes, validación, conflicto, filtros, enlace de evaluación y móvil OK');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
